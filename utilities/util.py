@@ -1,5 +1,7 @@
+import os
 import numpy as np
 import torch
+import nibabel as nib
 from random import shuffle
 
 def find_divs(settings, volume):
@@ -56,6 +58,7 @@ def get_volume_from_patches3d(patches4d, divs = (3,3,6), offset=(0,0,0)):
     """
     if "torch" in str(type(patches4d)):
         patches4d = patches4d.numpy()
+    print(f"Patches 4d shape {patches4d.shape}")
     new_shape = [(ps -of*2)*int(d) for ps, of, d in zip(patches4d.shape[-3:], offset, divs)]
     volume3d = np.zeros(new_shape, dtype=patches4d.dtype)
     shape = volume3d.shape
@@ -166,3 +169,15 @@ def split_list(input_list, split_rate):
         result_list.append((big_split, small_split))
     return result_list
 
+def writeNifti(path,volume):
+    '''
+    writeNifti(path,volume)
+    Takes a Numpy volume, converts it to the Nifti1 file format, and saves it to file under
+    the specified path. Taken from Olivers filehandling class
+    '''
+    if(path.find('.nii.gz')==-1):
+        path = path + '.nii.gz'
+    affmat = np.eye(4)
+    affmat[0,0] = affmat[1,1] = -1
+    NiftiObject = nib.Nifti1Image(np.swapaxes(volume, 0, 1), affine=affmat)
+    nib.save(NiftiObject, os.path.normpath(path))

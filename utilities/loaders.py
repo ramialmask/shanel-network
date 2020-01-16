@@ -118,16 +118,15 @@ def load_trained_network(settings):
     Args:
         - settings (dict)   : The global settings dict
     """
+
     if settings['network'] == 'deepvesselnet':
         net = Deep_Vessel_Net_FC(settings)
     elif settings['network'] == 'unet3d':
         net = Unet3D(settings)
 
-    # TODO
-    # if testing or prediction or settings['training']['retraining'] == "True":
-    #     model_path = settings['paths']['input_model_path'] + settings['paths']['input_model']
-    #     t_ = torch.load(model_path)
-    #     net.load_state_dict(t_)
+    model_path = settings['paths']['input_model_path'] + settings['paths']['input_model']
+    t_ = torch.load(model_path)
+    net.load_state_dict(t_)
     if settings["computation"]["use_cuda"] == "True":
         net = net.cuda()
 

@@ -3,30 +3,47 @@ import torch
 import numpy as np
 from utilities.loaders import load_network, get_prediction_loader
 
+import datetime
 
 def prediction(settings):
     print("Predicting...")
     input_list = os.listdir(settings['paths']['input_raw_path'])
 
-    print(f"Input list len {len(input_list)}")
+    output_path = settings["paths"]["output_seg_path"] + settings["paths"]["output_folder_prefix"] + ' | ' + str(datetime.datetime.now())
+    os.mkdir(output_path)
+    print(f"Created {output_path}")
+    settings["paths"]["output_seg_path"] = output_path
+
     loader, dataset = get_prediction_loader(settings, input_list)
 
-    print(f"len loader {len(loader)}")
+    lenloader = len(loader)
     net, _, _, _ = load_network(settings)
 
     threshold = float(settings["prediction"]["threshold"])
+    
+
+    sigmoid = settings["prediction"]["sigmoid"]
+    binarize = settings["prediction"]["binarize"]
 
     for idx, item in enumerate(loader):
-        print(len(item))
+        print(f"Predicting item {idx} of {lenloader}\t", end="\r", flush=True)
         item_input  = item.cuda()
 
         logits = net(item_input)
-        propabilities = torch.sigmoid(logits).detach().cpu().numpy()
         
-        predictions = propabilities
-        predictions[predictions >= threshold] = 1
-        predictions[predictions < threshold] = 0
+        if sigmoid:
+            propabilities = torch.sigmoid(logits).detach().cpu()
+        else:
+            propabilities = logits.detach().cpu()
+         
+        predictions = propabilities.numpy()
+
+        if binarize:
+            predictions[predictions >= threshold] = 1
+            predictions[predictions < threshold] = 0
     
         dataset.save_item(idx, predictions)
-        # TODO save predictiona
+        logits = 0
+        propabilities = 0
+    print("\nDone.")
 

@@ -18,17 +18,13 @@ if __name__ == "__main__":
     with open(path) as file:
         settings = json.loads(file.read())
 
-    #TODO print stats
-
-    # maybe print link to Tensorboard?
-    print("Check out TensorBoard:  https://localhost:6006")
 
     #TODO set gpu
     torch.cuda.init()
     torch.cuda.set_device(0)
-    
+
     if mode == "train":
+        print("Check out TensorBoard to track the training progress:  https://localhost:6006")
         training.testfold_training(settings)
     elif mode == "predict":
         prediction.prediction(settings)
-    #TODO train, test, predict
