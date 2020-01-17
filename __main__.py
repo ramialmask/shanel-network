@@ -2,6 +2,7 @@ import torch
 import argparse
 import training.training as training
 import prediction.prediction as prediction
+import counting.counting as counting
 import json
 
 if __name__ == "__main__":
@@ -28,3 +29,5 @@ if __name__ == "__main__":
         training.testfold_training(settings)
     elif mode == "predict":
         prediction.prediction(settings)
+    elif mode == "count":
+        counting.counting(settings)

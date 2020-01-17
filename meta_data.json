@@ -4,7 +4,7 @@
         "input_seg_path":   "/home/ramial-maskari/Documents/SHANEL Project/Segmentation/input/raw",
         "input_gt_path":    "/home/ramial-maskari/Documents/SHANEL Project/Segmentation/input/gt/",
         "input_bg_path":"",
-        "input_mask_path":"",
+        "input_count_path":"/home/ramial-maskari/Documents/SHANEL Project/Segmentation/input/gt/",
         "input_model_path":"/home/ramial-maskari/Documents/SHANEL Project/Segmentation/input/models/",
         "output_seg_path":"/home/ramial-maskari/Documents/SHANEL Project/Segmentation/output/patches/",
         "output_model_path":"/home/ramial-maskari/Documents/SHANEL Project/Segmentation/output/models/",

@@ -169,6 +169,19 @@ def split_list(input_list, split_rate):
         result_list.append((big_split, small_split))
     return result_list
 
+def readNifti(path):
+    '''
+    volume = readNifti(path)
+
+    Reads in the NiftiObject saved under path and returns a Numpy volume.
+    '''
+    if(path.find('.nii')==-1):
+        path = path + '.nii'
+    NiftiObject = nib.load(path)
+    # Load volume and adjust orientation from (x,y,z) to (y,x,z)
+    volume = np.swapaxes(NiftiObject.dataobj,0,1)
+    return volume
+
 def writeNifti(path,volume):
     '''
     writeNifti(path,volume)
