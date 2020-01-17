@@ -4,20 +4,32 @@ This repository contains the code for [Cell/bioarXiv-link to SHANEL paper].
 
 ## Overview
 
-In this repository you will find the ressources to perform all deep learning and image analysis tasks described in the [SHANEL paper], including training a convolutional neural network, predicting a binary mask on tissue-cleared images and counting cells on binary masks.
+In this repository you will find the ressources to perform all deep learning and image analysis tasks described in the _Zhao et al: Cellular and Molecular Probing of Intact Human
+Organs_, including training a convolutional neural network, predicting a binary mask on tissue-cleared images and counting cells on binary masks. In order to train a network on your own, predict a binary mask on a dataset or count the number of cells you only need to manipulate the meta_data.json file.
 
 ## Requirements
-Python 3.6
-[List all used packages  - numpy, scipy, torch, torchvision, multiprocessing, fast-cca, nibabel, etc.]
+- Python 3.6
+- numpy
+- pytorch 
+- torchvision 
+- cudatoolkit=10.1
+- nibabel
+- connected-components-3d
+- multiprocessing
+- json
 
 ## Cell Counting
 
-- get binary mask as .nii (or .nii.gz) file, select amount of processors, run
-TODO Olivers code!
+Cell counting works on binary masks. After predicting your data, set `["paths"]["input_count_path"]` to the folder containing your segmentation masks and enter `python __main__.py count` in your console. The amount of cells will be written on screen.
 
-## Predcition
+## Prediction
+After training a model, you will have one meta_data.json file containing most neccessary information to predict on new data, e.g. the name of the network architecture, the correct padding, the right normalization values. Only path variables have to be set: 
 
-TODO TODO TODO
+1. Set `["paths"]["input_seg_path"]` to the directory containing the raw items
+2. Set `["paths"]["input_model_path"]` to the directory containing your model file
+3. Set `["paths"]["output_seg_path"]` to the directory where the new output folder containing all predictions will be created
+4. Set `["paths"]["output_folder_prefix"]`, `["paths"]["output_prefix"]`, `["paths"]["output_postfix"]` as you wish
+5. Enter `python __main__.py predict` in your console
 
 ## Training
 
