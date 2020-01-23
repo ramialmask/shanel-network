@@ -8,10 +8,12 @@ from utilities.util import calc_metrices, split_list
 import datetime
 
 # TODO 
-# - Prediction 
+# Save meta dicts
+# Implement retraining
 
 def testfold_training(settings):
-
+    torch.cuda.init()
+    torch.cuda.set_device(0)
     print("Network:\t" + settings['network'])
     print(f"Loss:\t\t" + settings["training"]["loss"]["class"])
     print(f"Loss reduction\t" + settings["training"]["loss"]["reduction"])
@@ -50,13 +52,15 @@ def testfold_training(settings):
         test_score = test(settings, test_iteration, test_loader, best_candidate[0])
         print(f"Test scores {test_score}")
         test_scores.append(test_score)
-    print(test_scores)
 
+    for i in range(len(test_scores)):
+        print(f"Test dice score {i}:\t{test_scores[i][-1]}")
 
 def train(settings, test_fold, val_fold,  epochs, train_loader, val_loader, model_name):
-
     net, criterion, optimizer, scheduler = load_network(settings)
     writer = SummaryWriter(f"/home/ramial-maskari/runs/{model_name}/{test_fold}/{val_fold}")
+
+    last_model_path = ""
 
     for epoch in range(epochs):
         train_loss = train_epoch(settings, train_loader, net, optimizer, criterion)
@@ -70,7 +74,8 @@ def train(settings, test_fold, val_fold,  epochs, train_loader, val_loader, mode
         writer.add_scalar(f'Validation Metrics/Accuracy', metrics[-2], epoch)
         writer.add_scalar(f'Validation Metrics/Dice', metrics[-1], epoch)
         
-        save_epoch(settings, net, epoch, model_name, test_fold, val_fold)
+        last_model_path = save_epoch(settings, net, epoch, model_name, test_fold, val_fold, last_model_path)
+    #TODO write Meta Dict
     return net, metrics, eval_loss
 
 def train_epoch(settings, loader, net, optimizer, criterion):
@@ -89,7 +94,6 @@ def train_epoch(settings, loader, net, optimizer, criterion):
         optimizer.step()
         loss_list.append(training_loss.clone().detach().cpu().numpy())
     return np.average(loss_list)
-
 
 def validate_epoch(settings, loader, net, optimizer, criterion):
     net.eval()
@@ -133,11 +137,17 @@ def test(settings, test_iteration, loader, net):
 
     return [np.average(m) for m in metric_list]
 
-def save_epoch(settings, net, train_val_iteration, epoch, model_name):
+def save_epoch(settings, net, epoch, model_name, test_fold, val_fold, last_model_path):
+    if settings["training"]["delete_qs"] == "True" and last_model_path != "":
+        os.unlink(last_model_path)
+
     model_save_dir = os.path.join(settings["paths"]["output_model_path"], model_name)
-    model_save_path = os.path.join(model_save_dir, settings["paths"]["model_name"],f"_{train_val_iteration}_{epoch}.dat")
+    model_save_path = os.path.join(model_save_dir, settings["paths"]["model_name"],f"_{test_fold}_{val_fold}_{epoch}.dat")
     
+    print(f"Saving model to {model_save_path} in {model_save_dir}...")
     if not os.path.exists(model_save_dir):
         os.mkdir(model_save_dir)
 
     net.save_model(model_save_path)
+    print("Saved model.")
+    return model_save_path

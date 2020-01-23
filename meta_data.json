@@ -8,12 +8,12 @@
         "input_model_path":"/home/ramial-maskari/Documents/SHANEL Project/Segmentation/input/models/",
         "output_seg_path":"/home/ramial-maskari/Documents/SHANEL Project/Segmentation/output/patches/",
         "output_model_path":"/home/ramial-maskari/Documents/SHANEL Project/Segmentation/output/models/",
-        "output_error_path":"/home/ramial-maskari/Documents/SHANEL Project/Segmentation/output/errors/",
+        "output_count_path":"/home/ramial-maskari/Documents/SHANEL Project/Segmentation/output/count/",
         "input_prefix":"",
         "input_postfix":"",
         "input_type":".nii.gz",
-        "input_model":"lr_1e-4_ch_1model_.dat",
-        "output_folder_prefix":"UNet Tensorboard test ", 
+        "input_model":"",
+        "output_folder_prefix":"DVN Tensorboard test ", 
         "output_prefix":"",
         "output_postfix":"",
         "output_type":".nii.gz",
@@ -24,6 +24,9 @@
         "use_optimal_gpu":"True",
         "gpu":"cuda0"
     },
+    "partitioning":{
+        "overlap":5
+    },
     "preprocessing":{
         "cutoff_freq_low":"0.0",
         "cutoff_freq_high":"1.0",
@@ -32,7 +35,7 @@
         "normalization":"True",
         "normalization_type":"global",
         "normalization_values":{
-            "foreground":["769.0","5711.0"],
+            "foreground":["0.0","63774.0"],
             "background":["0.0","0.0"],
             "cutoff":"0.5"
         },
@@ -44,7 +47,7 @@
     },
     "dataloader":{
         "num_channels":"1",
-        "batch_size":"8",
+        "batch_size":"4",
         "shuffle":"True",
         "num_workers":"0",
         "block_size":"100",
@@ -75,15 +78,15 @@
         },
         "optimizer":{
             "class":"Adam",
-            "learning_rate":"1e-3",
+            "learning_rate":"1e-4",
             "decay":"Default",
             "momentum":"Default"
         },
         "scheduler":{
             "use_scheduler":"True",
             "patience":"15",
-            "factor":"0.1",
-            "min_factor":"1e-6",
+            "factor":"0.5",
+            "min_factor":"1e-5",
             "threshold":""
         }
     },

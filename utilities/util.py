@@ -1,6 +1,7 @@
 import os
 import numpy as np
 import torch
+import json
 import nibabel as nib
 from random import shuffle
 
@@ -158,6 +159,11 @@ def calc_metrices(pred, target):
         f1_dice = (2*tp) / (2*tp + fp +fn)
     return precision, recall, vs, accuracy, f1_dice
 
+def progress_bar(pars,toto,prefixmsg="", postfixmsg=""):
+    percent = 100 * (pars / toto)# + 1
+    bars = int(np.floor(percent)) * "█"
+    print(prefixmsg + "\t | Overall: %d%% \t" % percent + bars + postfixmsg, end="\r", flush=True)
+
 def split_list(input_list, split_rate):
     split_size = int(np.ceil(len(input_list) * split_rate))
     split_amount = int(len(input_list) / split_size)
@@ -194,3 +200,42 @@ def writeNifti(path,volume):
     affmat[0,0] = affmat[1,1] = -1
     NiftiObject = nib.Nifti1Image(np.swapaxes(volume, 0, 1), affine=affmat)
     nib.save(NiftiObject, os.path.normpath(path))
+
+def writeMeta(path, settings, name=""):
+    with open(os.path.join(path, name), "w") as file:
+        json.dump(settings, file)
+
+def create_meta_dict(path, mode):
+    """Load the meta dict / settings dict according to the mode
+    """
+    # Load path dict (always needed)
+    settings = {}
+    paths_path = os.path.join(path, "paths.json")
+    with open(paths_path) as file:
+        settings["paths"] = json.loads(file.read())
+    
+    if mode == "train":
+        train_path = os.path.join(path, "train.json")
+        with open(train_path) as file:
+            settings["training"] = json.loads(file.read())
+    elif mode == "predict":
+        predict_path = os.path.join(path, "predict.json")
+        with open(predict_path) as file:
+            settings["prediction"] = json.loads(file.read())
+
+    if mode == "count":
+        partition_path = os.path.join(path, "partitioning.json")
+        with open(partition_path) as file:
+            settings["partitioning"] = json.loads(file.read())
+    else:
+        network_path = os.path.join(path, "network.json")
+        with open(network_path) as file:
+            _temp = json.loads(file.read())
+            settings["computation"] = _temp["computation"]
+            settings["preprocessing"] = _temp["preprocessing"]
+            settings["dataloader"] = _temp["dataloader"]
+            settings["network"] =  _temp["network"]
+            settings["prediction"] = _temp["prediction"]
+            settings["postprocessing"] =  _temp["postprocessing"]
+
+    return settings

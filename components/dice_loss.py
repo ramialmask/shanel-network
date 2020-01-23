@@ -6,19 +6,19 @@ from torch.nn.modules.loss import _Loss
 
 
 def dice_loss(input_tensor, target_tensor, reduction='sum'):
-    input_tensor = F.sigmoid(input_tensor)
+    input_tensor = torch.sigmoid(input_tensor)
     smooth = 1
     intersection = torch.sum((input_tensor * target_tensor))
     coeff = (2. * intersection + smooth) / (torch.sum(target_tensor) + torch.sum(input_tensor) + smooth)
     diceloss = 1. - coeff
     assert(not torch.isnan(diceloss))
     assert(not torch.isinf(diceloss))
-    
+
 
     return diceloss
 
 def dice_loss_2(input_tensor, target_tensor, reduction='sum'):
-    props = F.sigmoid(input_tensor)
+    props = torch.sigmoid(input_tensor)
     num = props * target_tensor
     
     num = torch.sum(num, dim=4)

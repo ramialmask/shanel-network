@@ -1,11 +1,13 @@
 import os
 import torch
 import numpy as np
-from utilities.loaders import load_network, get_prediction_loader
+from utilities.loaders import load_trained_network, get_prediction_loader
 
 import datetime
 
 def prediction(settings):
+    torch.cuda.init()
+    torch.cuda.set_device(0)
     print("Predicting...")
     input_list = os.listdir(settings['paths']['input_raw_path'])
 
@@ -17,7 +19,7 @@ def prediction(settings):
     loader, dataset = get_prediction_loader(settings, input_list)
 
     lenloader = len(loader)
-    net, _, _, _ = load_network(settings)
+    net = load_trained_network(settings)
 
     threshold = float(settings["prediction"]["threshold"])
     
