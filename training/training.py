@@ -4,17 +4,16 @@ import numpy as np
 from torch.utils.tensorboard import SummaryWriter
 from random import shuffle
 from utilities.loaders import load_network, get_loader
-from utilities.util import calc_metrices, split_list
+from utilities.util import calc_metrices, split_list, write_meta_dict
 import datetime
-
+import shutil
 # TODO 
 # Save meta dicts
-# Implement retraining
 
 def testfold_training(settings):
     torch.cuda.init()
     torch.cuda.set_device(0)
-    print("Network:\t" + settings['network'])
+    print("Network:\t" + settings["network"])
     print(f"Loss:\t\t" + settings["training"]["loss"]["class"])
     print(f"Loss reduction\t" + settings["training"]["loss"]["reduction"])
     print(f"Learning rate:\t" + settings["training"]["optimizer"]["learning_rate"])
@@ -22,14 +21,14 @@ def testfold_training(settings):
     print(f"Optimizer:\t" + settings["training"]["optimizer"]["class"])
 
     epochs = int(settings["training"]["epochs"])
-    model_name =  settings['paths']['output_folder_prefix'] + \
-            settings['network'] + ' ' + settings['training']['optimizer']['class'] + \
-            ' factor ' + settings['training']['scheduler']['factor'] + ' ' + \
-            settings['training']['loss']['class'] + ' LR=' + settings['training']['optimizer']['learning_rate'] + \
-            ' Blocksize ' + settings['dataloader']['block_size'] + \
-            ' Epochs ' + settings['training']['epochs'] + ' '+ ' | ' + str(datetime.datetime.now())
+    model_name =  settings["paths"]["output_folder_prefix"] + \
+            settings["network"] + " " + settings["training"]["optimizer"]["class"] + \
+            " factor " + settings["training"]["scheduler"]["factor"] + " " + \
+            settings["training"]["loss"]["class"] + " LR=" + settings["training"]["optimizer"]["learning_rate"] + \
+            " Blocksize " + settings["dataloader"]["block_size"] + \
+            " Epochs " + settings["training"]["epochs"] + " "+ " | " + str(datetime.datetime.now())
 
-    input_list = os.listdir(settings['paths']['input_raw_path'])
+    input_list = os.listdir(settings["paths"]["input_raw_path"])
     test_split_rate = float(settings["training"]["crossvalidation"]["test_split_rate"])
     train_val_split_rate = float(settings["training"]["crossvalidation"]["train_val_split_rate"])
     test_lists = split_list(input_list, test_split_rate)
@@ -65,15 +64,9 @@ def train(settings, test_fold, val_fold,  epochs, train_loader, val_loader, mode
     for epoch in range(epochs):
         train_loss = train_epoch(settings, train_loader, net, optimizer, criterion)
         metrics, eval_loss = validate_epoch(settings, val_loader, net, optimizer, criterion)
-        print(f"{test_fold} {val_fold} Epoch {epoch} of {epochs}\tTrain Loss:\t{train_loss}\tValidation Loss:\t{eval_loss}\tValidation Dice:\t{metrics[-1]}")
-
-        writer.add_scalar(f'Loss/Training', train_loss, epoch)
-        writer.add_scalar(f'Loss/Validation', eval_loss, epoch)
-        writer.add_scalar(f'Validation Metrics/Precision', metrics[0], epoch)
-        writer.add_scalar(f'Validation Metrics/Recall', metrics[1], epoch)
-        writer.add_scalar(f'Validation Metrics/Accuracy', metrics[-2], epoch)
-        writer.add_scalar(f'Validation Metrics/Dice', metrics[-1], epoch)
         
+        _write_progress(writer, test_fold, val_fold, epoch, epochs,train_loss, eval_loss, metrics)
+
         last_model_path = save_epoch(settings, net, epoch, model_name, test_fold, val_fold, last_model_path)
     #TODO write Meta Dict
     return net, metrics, eval_loss
@@ -139,15 +132,36 @@ def test(settings, test_iteration, loader, net):
 
 def save_epoch(settings, net, epoch, model_name, test_fold, val_fold, last_model_path):
     if settings["training"]["delete_qs"] == "True" and last_model_path != "":
-        os.unlink(last_model_path)
+        shutil.rmtree(last_model_path)
 
     model_save_dir = os.path.join(settings["paths"]["output_model_path"], model_name)
-    model_save_path = os.path.join(model_save_dir, settings["paths"]["model_name"],f"_{test_fold}_{val_fold}_{epoch}.dat")
-    
-    print(f"Saving model to {model_save_path} in {model_save_dir}...")
     if not os.path.exists(model_save_dir):
         os.mkdir(model_save_dir)
 
+    model_save_dir = os.path.join(model_save_dir, str(test_fold))
+    if not os.path.exists(model_save_dir):
+        os.mkdir(model_save_dir)
+
+    model_save_dir = os.path.join(model_save_dir, str(val_fold))
+    if not os.path.exists(model_save_dir):
+        os.mkdir(model_save_dir)
+
+    model_save_path = os.path.join(model_save_dir, settings["paths"]["model_name"] + f"_{test_fold}_{val_fold}_{epoch}.dat")
+    
+    print(f"Saving model to {model_save_path} in {model_save_dir}...")
+
     net.save_model(model_save_path)
+    write_meta_dict(model_save_dir, settings, "train")
     print("Saved model.")
-    return model_save_path
+    return model_save_dir
+
+def _write_progress(writer, test_fold, val_fold, epoch, epochs, train_loss, eval_loss, metrics):
+    """
+    """
+    print(f"{test_fold} {val_fold} Epoch {epoch} of {epochs}\tTrain Loss:\t{train_loss}\tValidation Loss:\t{eval_loss}\tValidation Dice:\t{metrics[-1]}")
+    writer.add_scalar(f"Loss/Training", train_loss, epoch)
+    writer.add_scalar(f"Loss/Validation", eval_loss, epoch)
+    writer.add_scalar(f"Validation Metrics/Precision", metrics[0], epoch)
+    writer.add_scalar(f"Validation Metrics/Recall", metrics[1], epoch)
+    writer.add_scalar(f"Validation Metrics/Accuracy", metrics[-2], epoch)
+    writer.add_scalar(f"Validation Metrics/Dice", metrics[-1], epoch)

@@ -65,10 +65,12 @@ def get_volume_from_patches3d(patches4d, divs = (3,3,6), offset=(0,0,0)):
     shape = volume3d.shape
     widths = [int(s/d) for s, d in zip(shape, divs)]
     index = 0
+    print(f"Shape {shape} widths {widths}")
     for x in np.arange(0, shape[0], widths[0]):
         for y in np.arange(0, shape[1], widths[1]):
             for z in np.arange(0, shape[2], widths[2]):
-                patch = patches4d[index]
+                print(f"X {x} Y {y} Z {z} index {index} {patches4d.shape}")
+                patch = patches4d[index,:,:,:]
                 index = index + 1
                 volume3d[x:x+widths[0],y:y+widths[1],z:z+widths[2]] = \
                         patch[offset[0]:offset[0] + widths[0], offset[1]:offset[1]+widths[1], offset[2]:offset[2]+widths[2]]
@@ -175,37 +177,33 @@ def split_list(input_list, split_rate):
         result_list.append((big_split, small_split))
     return result_list
 
-def readNifti(path):
-    '''
-    volume = readNifti(path)
+def read_nifti(path):
+    """
+    volume = read_nifti(path)
 
     Reads in the NiftiObject saved under path and returns a Numpy volume.
-    '''
-    if(path.find('.nii')==-1):
-        path = path + '.nii'
+    """
+    if(path.find(".nii")==-1):
+        path = path + ".nii"
     NiftiObject = nib.load(path)
     # Load volume and adjust orientation from (x,y,z) to (y,x,z)
     volume = np.swapaxes(NiftiObject.dataobj,0,1)
     return volume
 
-def writeNifti(path,volume):
-    '''
-    writeNifti(path,volume)
+def write_nifti(path,volume):
+    """
+    write_nifti(path,volume)
     Takes a Numpy volume, converts it to the Nifti1 file format, and saves it to file under
     the specified path. Taken from Olivers filehandling class
-    '''
-    if(path.find('.nii.gz')==-1):
-        path = path + '.nii.gz'
+    """
+    if(path.find(".nii.gz")==-1):
+        path = path + ".nii.gz"
     affmat = np.eye(4)
     affmat[0,0] = affmat[1,1] = -1
     NiftiObject = nib.Nifti1Image(np.swapaxes(volume, 0, 1), affine=affmat)
     nib.save(NiftiObject, os.path.normpath(path))
 
-def writeMeta(path, settings, name=""):
-    with open(os.path.join(path, name), "w") as file:
-        json.dump(settings, file)
-
-def create_meta_dict(path, mode):
+def read_meta_dict(path, mode):
     """Load the meta dict / settings dict according to the mode
     """
     # Load path dict (always needed)
@@ -239,3 +237,32 @@ def create_meta_dict(path, mode):
             settings["postprocessing"] =  _temp["postprocessing"]
 
     return settings
+
+def write_meta_dict(path, settings, mode="train"):
+    path_dir = os.path.join(path, "paths.json")
+    with open(path_dir, "w") as file:
+        json.dump(settings["paths"], file)
+
+    if mode == "train":
+        train_dir = os.path.join(path, "train.json")
+        with open(train_dir, "w") as file:
+            json.dump(settings["training"], file)
+    elif mode == "predict":
+        predict_dir = os.path.join(path, "predict.json")
+        with open(predict_dir, "w") as file:
+            json.dump(settings["prediction"], file)
+    if mode == "count":
+        partition_path = os.path.join(path, "partitioning.json")
+        with open(partition_path, "w") as file:
+            json.dump(settings["partitioning"], file)
+    else:
+        network_path = os.path.join(path, "network.json")
+        with open(network_path, "w") as file:
+            _temp = {}
+            _temp["computation"]    = settings["computation"]
+            _temp["preprocessing"]  = settings["preprocessing"]
+            _temp["dataloader"]     = settings["dataloader"]
+            _temp["network"]        = settings["network"]
+            _temp["prediction"]     = settings["prediction"]
+            _temp["postprocessing"] = settings["postprocessing"]
+            json.dump(_temp, file)

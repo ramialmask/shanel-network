@@ -3,7 +3,7 @@ import training.training as training
 import prediction.prediction as prediction
 import counting.counting as counting
 import json
-from utilities.util import create_meta_dict
+from utilities.util import read_meta_dict
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Train, Inference on or Test a model")
@@ -13,7 +13,7 @@ if __name__ == "__main__":
     mode = args.mode
     use_gpu = args.use_gpu
 
-    settings = create_meta_dict(".", mode)
+    settings = read_meta_dict(".", mode)
 
     # load settings
     # settings = {}

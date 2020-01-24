@@ -1,7 +1,7 @@
 import os
 import torch
 import numpy as np
-from utilities.loaders import load_trained_network, get_prediction_loader
+from utilities.loaders import load_network, get_prediction_loader
 
 import datetime
 
@@ -9,9 +9,9 @@ def prediction(settings):
     torch.cuda.init()
     torch.cuda.set_device(0)
     print("Predicting...")
-    input_list = os.listdir(settings['paths']['input_raw_path'])
+    input_list = os.listdir(settings["paths"]["input_raw_path"])
 
-    output_path = settings["paths"]["output_seg_path"] + settings["paths"]["output_folder_prefix"] + ' | ' + str(datetime.datetime.now())
+    output_path = settings["paths"]["output_seg_path"] + settings["paths"]["output_folder_prefix"] + " | " + str(datetime.datetime.now())
     os.mkdir(output_path)
     print(f"Created {output_path}")
     settings["paths"]["output_seg_path"] = output_path
@@ -19,7 +19,7 @@ def prediction(settings):
     loader, dataset = get_prediction_loader(settings, input_list)
 
     lenloader = len(loader)
-    net = load_trained_network(settings)
+    net = load_network(settings, prediction=True)
 
     threshold = float(settings["prediction"]["threshold"])
     

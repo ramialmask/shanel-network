@@ -1,6 +1,6 @@
 {
     "retraining":"False",
-    "epochs":"200",
+    "epochs":"1",
     "delete_qs":"True",
     "loss":{
         "class":"DiceLoss",

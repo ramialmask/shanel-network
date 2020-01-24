@@ -88,48 +88,32 @@ def get_loss(settings):
         criterion = "MSELoss"
     return criterion
 
-def load_network(settings):
+def load_network(settings, prediction=False):
     """Load a network object and loss function and optimizer 
     Args:
         - settings (dict)   : The global settings dict
     """
-    if settings['network'] == 'deepvesselnet':
+    if settings["network"] == "deepvesselnet":
         net = Deep_Vessel_Net_FC(settings)
-    elif settings['network'] == 'unet3d':
+    elif settings["network"] == "unet3d":
         net = Unet3D(settings)
 
-    # TODO
-    # if testing or prediction or settings['training']['retraining'] == "True":
-    #     model_path = settings['paths']['input_model_path'] + settings['paths']['input_model']
-    #     t_ = torch.load(model_path)
-    #     net.load_state_dict(t_)
+    if prediction or settings["training"]["retraining"] == "True":
+        model_path = settings["paths"]["input_model_path"] + settings["paths"]["input_model"]
+        t_ = torch.load(model_path)
+        net.load_state_dict(t_)
     if settings["computation"]["use_cuda"] == "True":
         net = net.cuda()
 
-    criterion = get_loss(settings)
-    optimizer = get_optimizer(settings, net)
+    if prediction:
+        return net
+    else:
+        criterion = get_loss(settings)
+        optimizer = get_optimizer(settings, net)
 
-    scheduler = get_lr_optim(settings, optimizer)
+        scheduler = get_lr_optim(settings, optimizer)
 
-    return net, criterion, optimizer, scheduler
-
-def load_trained_network(settings):
-    """Load a network object
-    Args:
-        - settings (dict)   : The global settings dict
-    """
-
-    if settings['network'] == 'deepvesselnet':
-        net = Deep_Vessel_Net_FC(settings)
-    elif settings['network'] == 'unet3d':
-        net = Unet3D(settings)
-
-    model_path = settings['paths']['input_model_path'] + settings['paths']['input_model']
-    t_ = torch.load(model_path)
-    net.load_state_dict(t_)
-    if settings["computation"]["use_cuda"] == "True":
-        net = net.cuda()
-
+        return net, criterion, optimizer, scheduler
 
 def get_loader(settings, input_list):
     item_dataset = TrainingDataset(settings, input_list)
@@ -164,45 +148,6 @@ def get_prediction_loader(settings, input_list):
     }
     item_loader = DataLoader(item_dataset, **item_params)
     return item_loader, item_dataset
-#def load_loader(settings, input_list, iteration=0):
-#    val_split, train_split = get_splits(settings,input_list, iteration) 
-#    train_dataset   = TrainingDataset(settings,train_split)#, norm=partial(norm_data_whole_body, settings=settings))
-#    val_dataset     = TrainingDataset(settings, val_split)#, norm=partial(norm_data_whole_body, settings=settings))
-
-#    #Use +1 to avoid loosing one item due to drop_last
-#    train_len = len(train_dataset)
-#    train_batch_size = train_len + 1
-#    if (train_len + 1) % int(settings["dataloader"]["batch_size"]) == 0 or train_batch_size > 5:
-#        train_batch_size = int(settings["dataloader"]["batch_size"])
-#    print("Train Dataloader Batchsize: {}".format(train_batch_size))
-
-
-#    val_len = len(val_dataset)
-#    val_batch_size = val_len + 1
-#    if (val_len + 1) % int(settings["dataloader"]["batch_size"]) == 0 or val_batch_size > 5:
-#        val_batch_size = int(settings["dataloader"]["batch_size"])
-#    print("Validation Dataloader Batchsize: {}".format(val_batch_size))
-
-#    train_params = {
-#        "num_workers":int(settings["dataloader"]["num_workers"]),
-#        "pin_memory":True,
-#        "batch_sampler":BatchSampler(
-#            RandomSampler(train_dataset),
-#            batch_size=train_batch_size,#int(settings["dataloader"]["batch_size"]), # 12
-#            drop_last=(settings["dataloader"]["drop_last"] == "True"))
-#    }
-
-#    val_params = {
-#        "num_workers":int(settings["dataloader"]["num_workers"]),
-#        "pin_memory":True,
-#        "batch_sampler":BatchSampler(
-#            RandomSampler(val_dataset),
-#            batch_size=val_batch_size,#int(settings["dataloader"]["batch_size"]), # 5
-#            drop_last=(settings["dataloader"]["drop_last"] == "True"))
-#    }
-#    train_loader = DataLoader(train_dataset, **train_params)
-#    val_loader = DataLoader(val_dataset, **val_params)
-#    return train_loader, val_loader 
 
 def get_splits(settings, input_list, iteration=0):
     """ Get splits for a given iteration

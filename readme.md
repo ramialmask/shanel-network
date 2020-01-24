@@ -30,7 +30,7 @@ Cell counting works on binary masks. After predicting your data, set `["paths"][
 
 ## Prediction
 
-After training a model, you will have one meta_data.json file containing most neccessary information to predict on new data, e.g. the name of the network architecture, the correct padding, the right normalization values. Only path variables have to be set in the _paths.json_ file: 
+After training a model, you will have the network.json file containing most neccessary information to predict on new data, e.g. the name of the network architecture, the correct padding, the right normalization values. Only path variables have to be set in the _paths.json_ file: 
 
 1. Set `["paths"]["input_seg_path"]` to the directory containing the raw items
 2. Set `["paths"]["input_model_path"]` to the directory containing your model file

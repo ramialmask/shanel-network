@@ -11,10 +11,10 @@
     "input_prefix":"",
     "input_postfix":"",
     "input_type":".nii.gz",
-    "input_model":"",
-    "output_folder_prefix":"DVN Tensorboard test ", 
+    "input_model":"test_model.dat",
+    "output_folder_prefix":"Test Net", 
     "output_prefix":"",
     "output_postfix":"",
     "output_type":".nii.gz",
-    "model_name":""
+    "model_name":"test_model"
 }

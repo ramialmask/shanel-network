@@ -2,7 +2,7 @@ import sys
 import os
 import multiprocessing as mp
 import numpy as np
-from utilities.util import readNifti, progress_bar
+from utilities.util import read_nifti, progress_bar
 import cc3d
 import scipy.ndimage as ndi
 import datetime
@@ -48,7 +48,7 @@ def process_item(item):
     count = 0
     beg = datetime.datetime.now()
     direct_path = os.path.join(path_patches, item)
-    patch = readNifti(direct_path).astype(np.uint8)
+    patch = read_nifti(direct_path).astype(np.uint8)
     patch = patch[:-overlap,:-overlap, :-overlap]
     labels_out = cc3d.connected_components(patch)
 

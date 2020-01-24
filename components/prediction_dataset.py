@@ -5,7 +5,7 @@ import numpy as np
 import nibabel as nib
 
 from torch.utils.data import Dataset, DataLoader
-from utilities.util import find_divs, get_patch_data3d, get_volume_from_patches3d, writeNifti
+from utilities.util import find_divs, get_patch_data3d, get_volume_from_patches3d, write_nifti
 """
 - Load a single item, split it into the wanted 
 Pro:
@@ -16,6 +16,7 @@ Cons:
     needs more ram 
     longer setup time (init should load stuff into RAM)
 """
+# TODO Switch cases if shape/batchsize-mismatch in save_item
 class PredictionDataset(Dataset):
     def __init__(self, settings, split, transform=None, norm=None):
         self.settings = settings
@@ -64,6 +65,7 @@ class PredictionDataset(Dataset):
     def save_item(self, idx, item):
         batch_size = int(self.settings["dataloader"]["batch_size"])
         output_path = self.settings["paths"]["output_seg_path"]
+        print(f"{idx} {item.shape}")
         if not self.vdivs == -1:
             # get volume from patch data 3d
             item = np.squeeze(item)
@@ -75,7 +77,7 @@ class PredictionDataset(Dataset):
         direct_item = direct_item.numpy().astype(np.int32)
         direct_item_name = self.split[idx]
         direct_output_path = os.path.join(output_path, direct_item_name)
-        writeNifti(direct_output_path, direct_item)
+        write_nifti(direct_output_path, direct_item)
 
 
 
