@@ -2,7 +2,7 @@
     "computation":{
         "use_cuda":"True",
         "use_optimal_gpu":"True",
-        "gpu":"cuda0"
+        "gpu":"cuda:0"
     },
     "preprocessing":{
         "cutoff_freq_low":"0.0",

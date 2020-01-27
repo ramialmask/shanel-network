@@ -15,14 +15,8 @@ if __name__ == "__main__":
 
     settings = read_meta_dict(".", mode)
 
-    # load settings
-    # settings = {}
-    # path = "./meta_data.json"
-    # with open(path) as file:
-    #     settings = json.loads(file.read())
-
-
-    #TODO set gpu
+    if use_gpu > -1:
+        settings["computation"]["gpu"] = f"cuda:{use_gpu}"
 
     if mode == "train":
         print("Check out TensorBoard to track the training progress:  https://localhost:6006")
