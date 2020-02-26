@@ -8,7 +8,7 @@ from utilities.util import calc_metrices, split_list, write_meta_dict
 import datetime
 import shutil
 
-#TODO Add sheduler support in validate_epoch
+#TODO Save train, test, validation patches in settings !!!
 def testfold_training(settings):
     """Splits the training data into test folds, train folds and validation folds
     according to the meta information in train.json and trains a multitude of networks.
@@ -197,13 +197,10 @@ def save_epoch(settings, net, epoch, model_name, test_fold, val_fold, last_model
         os.mkdir(model_save_dir)
 
     model_save_path = os.path.join(model_save_dir, settings["paths"]["model_name"] + f"_{test_fold}_{val_fold}_{epoch}.dat")
-    
-    print(f"Saving model to {model_save_path} in {model_save_dir}...")
 
     # Save the model and the meta information
     net.save_model(model_save_path)
     write_meta_dict(model_save_dir, settings, "train")
-    print("Saved model.")
     return model_save_dir
 
 def _write_progress(writer, test_fold, val_fold, epoch, epochs, train_loss, eval_loss, metrics):

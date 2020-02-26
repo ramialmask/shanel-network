@@ -59,17 +59,17 @@ def get_volume_from_patches3d(patches4d, divs = (3,3,6), offset=(0,0,0)):
     """
     if "torch" in str(type(patches4d)):
         patches4d = patches4d.numpy()
-    print(f"Patches 4d shape {patches4d.shape}")
+    # print(f"Patches 4d shape {patches4d.shape}")
     new_shape = [(ps -of*2)*int(d) for ps, of, d in zip(patches4d.shape[-3:], offset, divs)]
     volume3d = np.zeros(new_shape, dtype=patches4d.dtype)
     shape = volume3d.shape
     widths = [int(s/d) for s, d in zip(shape, divs)]
     index = 0
-    print(f"Shape {shape} widths {widths}")
+    # print(f"Shape {shape} widths {widths}")
     for x in np.arange(0, shape[0], widths[0]):
         for y in np.arange(0, shape[1], widths[1]):
             for z in np.arange(0, shape[2], widths[2]):
-                print(f"X {x} Y {y} Z {z} index {index} {patches4d.shape}")
+                # print(f"X {x} Y {y} Z {z} index {index} {patches4d.shape}")
                 patch = patches4d[index,:,:,:]
                 index = index + 1
                 volume3d[x:x+widths[0],y:y+widths[1],z:z+widths[2]] = \

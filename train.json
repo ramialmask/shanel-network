@@ -1,6 +1,6 @@
 {
     "retraining":"False",
-    "epochs":"1",
+    "epochs":"100",
     "delete_qs":"True",
     "loss":{
         "class":"DiceLoss",
@@ -20,8 +20,8 @@
     "scheduler":{
         "use_scheduler":"True",
         "patience":"15",
-        "factor":"0.5",
-        "min_factor":"1e-5",
+        "factor":"0.1",
+        "min_factor":"1e-7",
         "threshold":""
     }
 }

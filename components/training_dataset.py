@@ -38,8 +38,8 @@ class TrainingDataset(Dataset):
             item_nii_path   = os.path.join(nii_path, item)
             item_gt_path    = os.path.join(gt_path, item)
 
-            image       = torch.tensor(np.swapaxes(nib.load(item_nii_path).dataobj, 0, 1).astype(np.int64)).float()
-            image_gt    = torch.tensor(np.swapaxes(nib.load(item_gt_path).dataobj, 0, 1).astype(np.int64)).float()
+            image       = np.swapaxes(nib.load(item_nii_path).dataobj, 0, 1).astype(np.int64)
+            image_gt    = np.swapaxes(nib.load(item_gt_path).dataobj, 0, 1).astype(np.int64)
 
             if transform:
                 image       = transform(image)
@@ -47,7 +47,11 @@ class TrainingDataset(Dataset):
 
             if norm:
                 image       = norm(image)
-                image_gt    = norm(image_gt)
+                # image_gt    = norm(image_gt)
+            
+            # Torchify
+            image = torch.tensor(image).float()
+            image_gt = torch.tensor(image_gt).float()
 
             if image.shape[0] > mb_size:
                 vdivs = find_divs(self.settings, image)

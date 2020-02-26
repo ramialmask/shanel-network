@@ -2,6 +2,8 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as optim
+import utilities.normalization as normalization
+from functools import partial
 from torch.utils.data import DataLoader, BatchSampler, SequentialSampler, RandomSampler
 from functools import partial
 from components.deep_vessel_3d import Deep_Vessel_Net_FC
@@ -115,12 +117,25 @@ def load_network(settings, prediction=False):
 
         return net, criterion, optimizer, scheduler
 
+#TODO To get a better working system, rework the region data so that it can be used to get normalization values
+def get_normalization(settings):
+    """Return the normalization function used for image preprocessing
+    """
+    normalization_values = settings["preprocessing"]["normalization_values"]["foreground"]
+    min_data, max_data = float(normalization_values[0]), float(normalization_values[1])
+    cfreq = float(settings["preprocessing"]["cutoff_freq_high"])
+    scope = settings["preprocessing"]["normalization_type"]
+    norm_function = partial(normalization.histinfo, scope=scope, cfreq=cfreq, min_data=min_data, max_data=max_data)
+    return norm_function
+
 def get_loader(settings, input_list):
-    item_dataset = TrainingDataset(settings, input_list)
+    norm_function = get_normalization(settings)
+    item_dataset = TrainingDataset(settings, input_list, norm=norm_function)#=0.999))
     item_len = len(item_dataset)
     item_batch_size = item_len + 1
     if (item_len + 1) % int(settings["dataloader"]["batch_size"]) == 0 or item_batch_size > 5:
         item_batch_size = int(settings["dataloader"]["batch_size"])
+
     item_params = {
         "num_workers":int(settings["dataloader"]["num_workers"]),
         "pin_memory":True,
@@ -133,7 +148,8 @@ def get_loader(settings, input_list):
     return item_loader
 
 def get_prediction_loader(settings, input_list):
-    item_dataset = PredictionDataset(settings, input_list)
+    norm_function = get_normalization(settings)
+    item_dataset = PredictionDataset(settings, input_list, norm=norm_function)
     item_len = len(item_dataset)
     item_batch_size = item_len + 1
     if (item_len + 1) % int(settings["dataloader"]["batch_size"]) == 0 or item_batch_size > 5:

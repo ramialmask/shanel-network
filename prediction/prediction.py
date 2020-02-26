@@ -9,7 +9,7 @@ def prediction(settings):
     torch.cuda.init()
     torch.cuda.set_device(0)
     print("Predicting...")
-    input_list = os.listdir(settings["paths"]["input_raw_path"])
+    input_list = sorted(os.listdir(settings["paths"]["input_seg_path"]))
 
     output_path = settings["paths"]["output_seg_path"] + settings["paths"]["output_folder_prefix"] + " | " + str(datetime.datetime.now())
     os.mkdir(output_path)
@@ -27,8 +27,10 @@ def prediction(settings):
     sigmoid = settings["prediction"]["sigmoid"]
     binarize = settings["prediction"]["binarize"]
 
+    print(f"Len Loader {lenloader}")
     for idx, item in enumerate(loader):
-        print(f"Predicting item {idx} of {lenloader}\t", end="\r", flush=True)
+        # print(f"Predicting item {idx} of {lenloader}")
+        # print(f"Predicting item {idx} of {lenloader}\t", end="\r", flush=True)
         item_input  = item.cuda()
 
         logits = net(item_input)
