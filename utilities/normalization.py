@@ -40,3 +40,39 @@ def histinfo(data, scope="global", cfreq=0.999, min_data=0, max_data=1):
             break
     data[data > cutoff] = cutoff
     return data
+
+def _get_neighbourhood(data, x, y, z, neighbourhood):
+    lower_bb = [0, 0, 0]
+    upper_bb = [0, 0, 0]
+
+    for i, dim in enumerate([x, y, z]):
+        if dim - neighourhood < 0:
+            lower_bb[i] = 0
+        else:
+            lower_bb[i] = dim - neighourhood
+
+        if dim + neighourhood >= data.shape[i]:
+            upper_bb[i] = data.shape[i] - 1
+        else:
+            upper_bb[i] = dim + neighourhood
+    result = data[lower_bb[0]:upper_bb[0], lower_bb[1]:upper_bb[1], lower_bb[2]:upper_bb[2]]
+    return result
+
+def _bernsen_threshold(data, neighbourhood):
+    result = np.zeros_like(data)
+    for x in range(1, data.shape[0]):
+        for y in range(1, data.shape[1]):
+            for z in range(1, data.shape[2]):
+                #Every single pixel
+                neighbourhood = _get_neighbourhood(data, x, y, z, neighbourhood)
+                result[x, y, z] = (np.amax(neighbourhood) - np.amin(neighbourhood)) / 2
+    return result
+
+def _otsu_threshold(data, neighbourhood):
+    return np.zeros_like(data)
+
+def auto_local_threshold(data, neighbourhood=10, method="bernsen"):
+    if method == "bernsen":
+        return _bernsen_threshold(data, neighbourhood)
+    elif method == "otsu":
+        return _otsu_threshold(data, neighbourhood)
