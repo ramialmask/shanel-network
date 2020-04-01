@@ -120,8 +120,8 @@ def calc_statistics(pred, target):
         - fp        (int)           : False positives
         - fn        (int)           : False negatives
     """
-    pred = np.asarray(pred).astype(bool)
-    target = np.asarray(target).astype(bool)
+    # pred = np.asarray(pred).astype(bool)
+    # target = np.asarray(target).astype(bool)
 
     la = lambda a, b: np.logical_and(a, b)
     no = lambda a: np.logical_not(a)

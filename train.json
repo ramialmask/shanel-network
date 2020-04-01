@@ -3,7 +3,7 @@
     "epochs":"100",
     "delete_qs":"True",
     "loss":{
-        "class":"DiceLoss",
+        "class":"BCELoss",
         "reduction":"sum",
         "weight":"CF"
     },

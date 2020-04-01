@@ -8,9 +8,11 @@ from torch.utils.data import DataLoader, BatchSampler, SequentialSampler, Random
 from functools import partial
 from components.deep_vessel_3d import Deep_Vessel_Net_FC
 from components.unet_3d_oliver import Unet3D
+from components.classification_cnn_2d import ClassificationCNN_2D
 from components.weighted_binary_cross_entropy_loss import WeightedBinaryCrossEntropyLoss
 from components.dice_loss import DiceLoss
 from components.training_dataset import TrainingDataset
+from components.training_dataset_discriminator_2d import TrainingDatasetDiscriminator_2D
 from components.prediction_dataset import PredictionDataset
 
 def get_optimizer(settings, net):
@@ -99,6 +101,8 @@ def load_network(settings, prediction=False):
         net = Deep_Vessel_Net_FC(settings)
     elif settings["network"] == "unet3d":
         net = Unet3D(settings)
+    elif settings["network"] == "classification2d":
+        net = ClassificationCNN_2D()
 
     if prediction or settings["training"]["retraining"] == "True":
         model_path = settings["paths"]["input_model_path"] + settings["paths"]["input_model"]
@@ -146,6 +150,26 @@ def get_loader(settings, input_list):
     }
     item_loader = DataLoader(item_dataset, **item_params)
     return item_loader
+
+def get_discriminator_loader(settings, input_list):
+    norm_function = get_normalization(settings)
+    item_dataset = TrainingDatasetDiscriminator_2D(settings, input_list, norm=norm_function)#=0.999))
+    item_len = len(item_dataset)
+    item_batch_size = item_len + 1
+    if (item_len + 1) % int(settings["dataloader"]["batch_size"]) == 0 or item_batch_size > 5:
+        item_batch_size = int(settings["dataloader"]["batch_size"])
+
+    item_params = {
+        "num_workers":int(settings["dataloader"]["num_workers"]),
+        "pin_memory":True,
+        "batch_sampler":BatchSampler(
+            RandomSampler(item_dataset),
+            batch_size=item_batch_size,
+            drop_last=(settings["dataloader"]["drop_last"] == "True"))
+    }
+    item_loader = DataLoader(item_dataset, **item_params)
+    return item_loader
+
 
 def get_prediction_loader(settings, input_list):
     norm_function = get_normalization(settings)

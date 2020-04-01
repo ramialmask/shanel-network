@@ -3,7 +3,7 @@ import torch
 import numpy as np
 from torch.utils.tensorboard import SummaryWriter
 from random import shuffle
-from utilities.loaders import load_network, get_loader
+from utilities.loaders import load_network, get_loader, get_discriminator_loader
 from utilities.util import calc_metrices, split_list, write_meta_dict
 import datetime
 import shutil
@@ -40,8 +40,9 @@ def testfold_training(settings):
             " Epochs " + settings["training"]["epochs"] + " "+ " | " + str(datetime.datetime.now())
 
     
+
     # Set up the test/train/val splits
-    input_list = os.listdir(settings["paths"]["input_raw_path"])
+    input_list = os.listdir(settings["paths"]["input_path"])
     test_split_rate = float(settings["training"]["crossvalidation"]["test_split_rate"])
     train_val_split_rate = float(settings["training"]["crossvalidation"]["train_val_split_rate"])
     test_lists = split_list(input_list, test_split_rate)
@@ -56,8 +57,12 @@ def testfold_training(settings):
         val_candidates = []
         for train_val_iteration, train_val_list in enumerate(train_val_lists):
             # Create the loaders for training and validation for a network and...
-            train_loader = get_loader(settings, train_val_list[0])
-            val_loader = get_loader(settings, train_val_list[1])
+            if settings["network"]  == "classification2d":
+                train_loader = get_discriminator_loader(settings, train_val_list[0])
+                val_loader = get_discriminator_loader(settings, train_val_list[1])
+            else:
+                train_loader = get_loader(settings, train_val_list[0])
+                val_loader = get_loader(settings, train_val_list[1])
 
             # ...train the network
             net, val_metrics, val_loss = train(settings, test_iteration, train_val_iteration, epochs, train_loader, val_loader, model_name)
@@ -71,14 +76,19 @@ def testfold_training(settings):
         print(f"Loss of best candidate: {best_candidate[2]}")
 
         # Test on the best candidate and save the settings
-        test_loader = get_loader(settings, test_list[1])
+        test_loader = get_discriminator_loader(settings, test_list[1])
         test_score = test(settings, test_iteration, test_loader, best_candidate[0])
         print(f"Test scores {test_score}")
         test_scores.append(test_score)
 
     # Print the test scores
+    result_str = "Test fold;Accuracy;Precision;Recall;Dice;\n"
     for i in range(len(test_scores)):
-        print(f"Test dice score {i}:\t{test_scores[i][-1]}")
+        result_str += f"{i};{test_scores[i][-2]:.4F};{test_scores[i][0]:.4F};{test_scores[i][1]:.4F};{test_scores[i][-1]:.4F};\n"
+    print(result_str)
+
+    with open(settings["paths"]["output_model_path"] + "/" +  model_name + f"/test_scores.txt", "x") as file:
+        file.write(result_str)
 
 def train(settings, test_fold, val_fold,  epochs, train_loader, val_loader, model_name):
     """Trains and validates one epoch, writes the output to both screen and attached writer and saves the epoch 
@@ -86,7 +96,9 @@ def train(settings, test_fold, val_fold,  epochs, train_loader, val_loader, mode
     """
     # Load all components beside the data loaders and create a dedicated writer for this model
     net, criterion, optimizer, scheduler = load_network(settings)
-    writer = SummaryWriter(f"/home/ramial-maskari/runs/{model_name}/{test_fold}/{val_fold}")
+
+    #TODO make this dir explicit in train.json
+    writer = SummaryWriter(f"/home/rami/runs/{model_name}/{test_fold}/{val_fold}")
 
     # This variable holds the location of the last trained network so all temporary saved networks can be deleted
     last_model_path = ""
@@ -113,7 +125,7 @@ def train_epoch(settings, loader, net, optimizer, criterion):
     loss_list = []
     for item in loader:
         item_input  = item["volume"].cuda()
-        item_label  = item["segmentation"].cuda()
+        item_label  = torch.FloatTensor([item["class"]]).cuda()
 
         optimizer.zero_grad()
         logits = net(item_input)
@@ -132,49 +144,54 @@ def validate_epoch(settings, loader, net, optimizer, criterion):
     # Load the binarization threshold
     threshold = float(settings["prediction"]["threshold"])
     # Validation loss and metrics are saved in order to supervise training progress
-    metric_list = []
+    result_list = []
     loss_list = []
-    for item in loader:
+    for item_no, item in enumerate(loader):
         item_input  = item["volume"].cuda()
-        item_label  = item["segmentation"].cuda()
+        item_label  = torch.FloatTensor([item["class"]]).cuda()
 
         logits = net(item_input)
         val_loss = criterion(logits, item_label)
-        propabilities = torch.sigmoid(logits).detach().cpu().numpy()
+        propabilities = logits.detach().cpu().numpy()
         
         # Stick to proper naming...
         predictions = propabilities
         predictions[predictions >= threshold] = 1
         predictions[predictions < threshold] = 0
 
-        metric_list.append(calc_metrices(predictions, item_label.detach().cpu().numpy()))
+        if item_no == 2:
+            print(f"Item 2 pred {logits} label " + str(item["class"]))
+        result_list.append([predictions, item["class"].numpy()])
         loss_list.append(val_loss.detach().cpu().numpy())
 
-    
-    return [np.average(m) for m in metric_list], np.average(loss_list)
+    metric_list = calc_metrices([r[0] for r in result_list], [r[1] for r in result_list])
+
+    return metric_list, np.average(loss_list)# [np.average(m) for m in metric_list]
     
 def test(settings, test_iteration, loader, net):
     """Tests an epoch and calculates precision, recall, accuracy, volumetric similarity and f1-score
     """
     net.eval()
-    metric_list = []
+    result_list = []
     # Load the binarization threshold
     threshold = float(settings["prediction"]["threshold"])
     for item in loader:
         item_input  = item["volume"].cuda()
-        item_label  = item["segmentation"].cuda()
+        item_label  = torch.FloatTensor([item["class"]]).cuda()
 
         logits = net(item_input)
-        propabilities = torch.sigmoid(logits).detach().cpu().numpy()
+        propabilities = logits.detach().cpu().numpy()
         
         # Stick to proper naming...
         predictions = propabilities
         predictions[predictions >= threshold] = 1
         predictions[predictions < threshold] = 0
+        result_list.append([predictions, item["class"].numpy()])
 
-        metric_list.append(calc_metrices(predictions, item_label.detach().cpu().numpy()))
+    metric_list = calc_metrices([r[0] for r in result_list], [r[1] for r in result_list])
 
-    return [np.average(m) for m in metric_list]
+    #TODO Quick and dirty fix
+    return metric_list# [np.average(m) for m in metric_list]
 
 def save_epoch(settings, net, epoch, model_name, test_fold, val_fold, last_model_path):
     """Saves an epoch into a new path and deletes the model from the previous epoch
