@@ -2,13 +2,13 @@ import os
 import torch
 import numpy as np
 from torch.utils.tensorboard import SummaryWriter
+import torch.nn.functional as F
 from random import shuffle
 from utilities.loaders import load_network, get_loader
 from utilities.util import calc_metrices, split_list, write_meta_dict
 import datetime
 import shutil
 
-#TODO Save train, test, validation patches in settings !!!
 def testfold_training(settings):
     """Splits the training data into test folds, train folds and validation folds
     according to the meta information in train.json and trains a multitude of networks.
@@ -59,26 +59,31 @@ def testfold_training(settings):
             train_loader = get_loader(settings, train_val_list[0])
             val_loader = get_loader(settings, train_val_list[1])
 
+            #Save training, validation and test sets to the settings
+            settings["training"]["crossvalidation"]["training_set"] = train_val_list[0]
+            settings["training"]["crossvalidation"]["validaton_set"] = train_val_list[1]
+            settings["training"]["crossvalidation"]["test_set"] = test_list[1]
+
             # ...train the network
             net, val_metrics, val_loss = train(settings, test_iteration, train_val_iteration, epochs, train_loader, val_loader, model_name)
             
             # The network, metrics and loss are saved, allowing for other testing criterias other than loss (eg dice)
-            val_candidates.append((net, val_metrics, val_loss))
+            val_candidates.append((net, val_metrics, val_loss, train_val_iteration))
 
-        # Get the best candidate for a test iteration by lambda sort
+        # Get the best candidate for a test iteration by lambda sorting for the validation loss
         sorted_val_candidates = sorted(val_candidates, key=lambda tu: tu[2])
         best_candidate = sorted_val_candidates[0]
-        print(f"Loss of best candidate: {best_candidate[2]}")
+        print(f"Loss of best candidate: {best_candidate[2]} - Candidate #{best_candidate[3]}")
 
         # Test on the best candidate and save the settings
         test_loader = get_loader(settings, test_list[1])
         test_score = test(settings, test_iteration, test_loader, best_candidate[0])
         print(f"Test scores {test_score}")
-        test_scores.append(test_score)
+        test_scores.append((best_candidate[3], test_score))
 
     # Print the test scores
     for i in range(len(test_scores)):
-        print(f"Test dice score {i}:\t{test_scores[i][-1]}")
+        print(f"Test dice score test iteration #{i} train_val iteration {test_scores[i][0]}:\t{test_scores[i][1][-1]}")
 
 def train(settings, test_fold, val_fold,  epochs, train_loader, val_loader, model_name):
     """Trains and validates one epoch, writes the output to both screen and attached writer and saves the epoch 
@@ -140,7 +145,9 @@ def validate_epoch(settings, loader, net, optimizer, criterion):
 
         logits = net(item_input)
         val_loss = criterion(logits, item_label)
-        propabilities = torch.sigmoid(logits).detach().cpu().numpy()
+        propabilities = torch.sigmoid(logits).detach().cpu().numpy() # XXX
+        # TODO Softmax vs sigmoid in settings/network, not here
+        # propabilities = F.softmax(logits).detach().cpu().numpy()
         
         # Stick to proper naming...
         predictions = propabilities

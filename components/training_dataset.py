@@ -49,11 +49,12 @@ class TrainingDataset(Dataset):
                 image       = norm(image)
                 # image_gt    = norm(image_gt)
             
-            # Torchify
-            image = torch.tensor(image).float()
-            image_gt = torch.tensor(image_gt).float()
 
             if image.shape[0] > mb_size:
+                # Torchify
+                image = torch.tensor(image).float()
+                image_gt = torch.tensor(image_gt).float()
+
                 vdivs = find_divs(self.settings, image)
                 offset_value = int(self.settings["preprocessing"]["padding"])
                 offset_volume = (offset_value, offset_value, offset_value)
@@ -65,8 +66,17 @@ class TrainingDataset(Dataset):
                 nii_list = nii_list + image_list
                 gt_list = gt_list + image_gt_list
             else:
-                nii_list.append(image.unsqueeze(1))
-                gt_list.append(image_gt.unsqueeze(1))
+                # TODO: Padd data with settings/padding
+                # Torchify
+
+                pad_width = int(settings["preprocessing"]["padding"])
+                padded_image    = np.pad(image, pad_width, "reflect")
+
+                image = torch.tensor(padded_image).float()
+                image_gt = torch.tensor(image_gt).float()
+                
+                nii_list.append(image.unsqueeze(0))
+                gt_list.append(image_gt.unsqueeze(0))
 
 
         self.item_list = [nii_list, gt_list]

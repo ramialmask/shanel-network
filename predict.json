@@ -1,6 +1,6 @@
 {
     "sigmoid":"True",
-    "binarize":"True",
+    "binarize":"False",
     "threshold":"0.5",
     "calc_metrics":"True",
     "calc_statistics":"True"
