@@ -8,7 +8,7 @@ from torch.utils.data import DataLoader, BatchSampler, SequentialSampler, Random
 from functools import partial
 from components.deep_vessel_3d import Deep_Vessel_Net_FC
 from components.unet_3d_oliver import Unet3D
-from components.classification_cnn_2d import ClassificationCNN_2D
+from components.classification_cnn_2d import ClassificationCNN_2D, ClassificationCNN_2D_FCN
 from components.weighted_binary_cross_entropy_loss import WeightedBinaryCrossEntropyLoss
 from components.dice_loss import DiceLoss
 from components.training_dataset import TrainingDataset
@@ -103,6 +103,8 @@ def load_network(settings, prediction=False):
         net = Unet3D(settings)
     elif settings["network"] == "classification2d":
         net = ClassificationCNN_2D()
+    elif settings["network"] == "classification2d_fcn":
+        net = ClassificationCNN_2D_FCN
 
     if prediction or settings["training"]["retraining"] == "True":
         model_path = settings["paths"]["input_model_path"] + settings["paths"]["input_model"]
@@ -169,7 +171,6 @@ def get_discriminator_loader(settings, input_list):
     }
     item_loader = DataLoader(item_dataset, **item_params)
     return item_loader
-
 
 def get_prediction_loader(settings, input_list):
     norm_function = get_normalization(settings)
