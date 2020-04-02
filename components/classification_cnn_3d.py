@@ -1,10 +1,9 @@
 import torch
 import torch.nn as nn
 
-""" ClassificationCNN
-    (C) Phillip Kaeß """
+""" ClassificationCNN in 3D based on the work of Phillip Kaeß"""
 
-class ClassificationCNN_2D(nn.Module):
+class ClassificationCNN_3D(nn.Module):
     """
     A PyTorch implementation of a three-layer convolutional network
     with the following architecture:
@@ -34,7 +33,7 @@ class ClassificationCNN_2D(nn.Module):
         - pool: The size of the max pooling window.
         - dropout: Probability of an element to be zeroed.
         """
-        super(ClassificationCNN_2D, self).__init__()
+        super(ClassificationCNN_3D, self).__init__()
         channels, height, width = input_dim
 
         ########################################################################

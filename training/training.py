@@ -57,6 +57,8 @@ def testfold_training(settings):
         val_candidates = []
         for train_val_iteration, train_val_list in enumerate(train_val_lists):
             # Create the loaders for training and validation for a network and...
+            print(f"Train List {train_val_list[0]}")
+            print(f"Val List {train_val_list[1]}")
             if settings["network"]  == "classification2d":
                 train_loader = get_discriminator_loader(settings, train_val_list[0])
                 val_loader = get_discriminator_loader(settings, train_val_list[1])
@@ -98,7 +100,7 @@ def train(settings, test_fold, val_fold,  epochs, train_loader, val_loader, mode
     net, criterion, optimizer, scheduler = load_network(settings)
 
     #TODO make this dir explicit in train.json
-    writer = SummaryWriter(f"/home/rami/runs/{model_name}/{test_fold}/{val_fold}")
+    writer = SummaryWriter(f"/home/ramial-maskari/runs/{model_name}/{test_fold}/{val_fold}")
 
     # This variable holds the location of the last trained network so all temporary saved networks can be deleted
     last_model_path = ""

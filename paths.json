@@ -1,7 +1,7 @@
 {
-    "input_path":   "/home/rami/Documents/neuron-segmentation/classification/input/patches/",
-    "input_model_path":"/home/rami/Documents/neuron-segmentation/classification/input/models/",
-    "output_model_path":"/home/rami/Documents/neuron-segmentation/classification/output/models/",
+    "input_path":   "/media/ramial-maskari/16TBDrive/Synthetic Neuron Creation/classification/input/patches/",
+    "input_model_path": "/media/ramial-maskari/16TBDrive/Synthetic Neuron Creation/classification/input/models/",
+    "output_model_path":"/media/ramial-maskari/16TBDrive/Synthetic Neuron Creation/classification/output/models/",
     "input_prefix":"",
     "input_postfix":"",
     "input_type":".nii.gz",

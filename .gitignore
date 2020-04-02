@@ -135,3 +135,7 @@ tags
 # End of https://www.gitignore.io/api/vim,python
 
 meta_data.json
+
+# Json files
+.json
+

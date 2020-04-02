@@ -36,8 +36,9 @@ class TrainingDatasetDiscriminator_2D(Dataset):
             if transform:
                 image       = transform(image)
 
-            if norm:
-                image       = norm(image)
+            #TODO no norm for now until figured out
+            # if norm:
+            #     image       = norm(image)
             
             # Torchify
             image       = torch.tensor(image).float().unsqueeze(0)
