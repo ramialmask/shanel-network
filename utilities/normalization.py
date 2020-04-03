@@ -20,6 +20,11 @@ def normalize(data):
     data = data * 1.0 / np.max(data)
     return data
 
+def normalize_std(image):
+    eps = 0.0001
+    image = image / (np.std(image) + eps) - np.mean(image)
+    return image
+
 def histinfo(data, scope="global", cfreq=0.999, min_data=0, max_data=1):
     """Histogram function to locate a significant cut off point
     Args:

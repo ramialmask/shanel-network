@@ -104,7 +104,7 @@ def load_network(settings, prediction=False):
     elif settings["network"] == "classification2d":
         net = ClassificationCNN_2D()
     elif settings["network"] == "classification2d_fcn":
-        net = ClassificationCNN_2D_FCN
+        net = ClassificationCNN_2D_FCN()
 
     if prediction or settings["training"]["retraining"] == "True":
         model_path = settings["paths"]["input_model_path"] + settings["paths"]["input_model"]
@@ -127,11 +127,7 @@ def load_network(settings, prediction=False):
 def get_normalization(settings):
     """Return the normalization function used for image preprocessing
     """
-    normalization_values = settings["preprocessing"]["normalization_values"]["foreground"]
-    min_data, max_data = float(normalization_values[0]), float(normalization_values[1])
-    cfreq = float(settings["preprocessing"]["cutoff_freq_high"])
-    scope = settings["preprocessing"]["normalization_type"]
-    norm_function = partial(normalization.histinfo, scope=scope, cfreq=cfreq, min_data=min_data, max_data=max_data)
+    norm_function = normalization.normalize_std
     return norm_function
 
 def get_loader(settings, input_list):

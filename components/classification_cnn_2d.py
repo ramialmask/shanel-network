@@ -16,7 +16,7 @@ class ClassificationCNN_2D(nn.Module):
     channels.
     """
 
-    def __init__(self, input_dim=(1, 300, 300), kernel_size=3,
+    def __init__(self, input_dim=(1, 400, 400), kernel_size=3,
                  stride_conv=1, pool=2, stride_pool=2,
                  num_classes=1):
         """
@@ -107,7 +107,7 @@ class ClassificationCNN_2D(nn.Module):
         height7 = int((height6 - kernel_size + 2 * padding + 1) / pool)#=4
         height8 = int((height7 - kernel_size + 2 * padding + 1) / pool)#=2
 
-        self.in_features = height7 * height7 # * 16 
+        self.in_features = height7 * height7  * 16 
         self.fc1 = nn.Linear(in_features=self.in_features, out_features=num_classes)
 
     def forward(self, x):

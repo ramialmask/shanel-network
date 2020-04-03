@@ -26,22 +26,23 @@ class TrainingDatasetDiscriminator_2D(Dataset):
         for item in split:
             item_image_path = os.path.join(image_path, item)
 
-            image       = np.array(Image.open(item_image_path)).astype(np.int64)[:100,:100]
+            image       = np.array(Image.open(item_image_path)).astype(np.float64)#[:100,:100]
             image_class = -1
             if "raw" in item:
                 image_class = 0
             elif "bg" in item:
                 image_class = 1
+            image_class = np.array(image_class).astype(np.float64)
 
             if transform:
                 image       = transform(image)
 
-            #TODO no norm for now until figured out
-            # if norm:
-            #     image       = norm(image)
+            if norm:
+                image       = norm(image)
             
             # Torchify
             image       = torch.tensor(image).float().unsqueeze(0)
+            image_class = torch.tensor(image_class).float()
 
             image_list.append((image, image_class))
 
