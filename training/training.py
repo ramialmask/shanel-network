@@ -4,11 +4,10 @@ import numpy as np
 from torch.utils.tensorboard import SummaryWriter
 from random import shuffle
 from utilities.loaders import load_network, get_loader, get_discriminator_loader
-from utilities.util import calc_metrices, split_list, write_meta_dict
-import datetime
+from utilities.util import calc_metrices, split_list, write_meta_dict, get_model_name
 import shutil
 
-#TODO Save train, test, validation patches in settings !!!
+#TODO Save train, test, validation patches in settings dict!
 def testfold_training(settings):
     """Splits the training data into test folds, train folds and validation folds
     according to the meta information in train.json and trains a multitude of networks.
@@ -32,14 +31,7 @@ def testfold_training(settings):
 
     # Concatenate the model name
     epochs = int(settings["training"]["epochs"])
-    model_name =  settings["paths"]["output_folder_prefix"] + \
-            settings["network"] + " " + settings["training"]["optimizer"]["class"] + \
-            " factor " + settings["training"]["scheduler"]["factor"] + " " + \
-            settings["training"]["loss"]["class"] + " LR=" + settings["training"]["optimizer"]["learning_rate"] + \
-            " Blocksize " + settings["dataloader"]["block_size"] + \
-            " Epochs " + settings["training"]["epochs"] + " "+ " | " + str(datetime.datetime.now())
-
-    
+    model_name = get_model_name(settings)    
 
     # Set up the test/train/val splits
     input_list = os.listdir(settings["paths"]["input_path"])
@@ -100,7 +92,8 @@ def train(settings, test_fold, val_fold,  epochs, train_loader, val_loader, mode
     net, criterion, optimizer, scheduler = load_network(settings)
 
     #TODO make this dir explicit in train.json
-    writer = SummaryWriter(f"/home/ramial-maskari/runs/{model_name}/{test_fold}/{val_fold}")
+    writer_path = settings["paths"]["writer_path"]
+    writer = SummaryWriter(f"{writer_path}{model_name}/{test_fold}/{val_fold}")
 
     # This variable holds the location of the last trained network so all temporary saved networks can be deleted
     last_model_path = ""
@@ -131,6 +124,9 @@ def train_epoch(settings, loader, net, optimizer, criterion):
 
         optimizer.zero_grad()
         logits = net(item_input)
+        logits = logits.view(-1)
+
+        # print(f"Logits {logits} Label {item_label}")
 
         training_loss = criterion(logits, item_label)
         training_loss.backward()

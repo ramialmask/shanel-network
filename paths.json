@@ -2,6 +2,7 @@
     "input_path":   "/media/ramial-maskari/16TBDrive/Synthetic Neuron Creation/classification/input/patches/",
     "input_model_path": "/media/ramial-maskari/16TBDrive/Synthetic Neuron Creation/classification/input/models/",
     "output_model_path":"/media/ramial-maskari/16TBDrive/Synthetic Neuron Creation/classification/output/models/",
+    "writer_path":"/home/ramial-maskari/runs/",
     "input_prefix":"",
     "input_postfix":"",
     "input_type":".nii.gz",
