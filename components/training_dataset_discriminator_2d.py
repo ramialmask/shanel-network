@@ -2,7 +2,6 @@ import os
 
 import torch
 import numpy as np
-import nibabel as nib
 
 from torch.utils.data import Dataset, DataLoader
 from utilities.util import find_divs, get_patch_data3d

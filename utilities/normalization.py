@@ -16,13 +16,15 @@ def gen_mask_min_data(data,cutoff=9000):
 def normalize(data):
     """Normalization
     """
-    data = data - np.min(data)
-    data = data * 1.0 / np.max(data)
+    data = (data - np.min(data)) / (np.max(data) - np.min(data))
     return data
 
 def normalize_std(image):
-    eps = 0.0001
-    image = image / (np.std(image) + eps) - np.mean(image)
+    eps = 0.000001
+    # print(f"{np.amin(image)} - {np.amax(image)} - Mean {np.mean(image)} STD {np.std(image)}") 
+    img_b = image.clone()
+    image = (image - np.mean(image))/(np.std(image) + eps) 
+    # print(f"After: {np.amin(image)} - {np.amax(image)} - Mean {np.mean(image)} STD {np.std(image)}") 
     return image
 
 def histinfo(data, scope="global", cfreq=0.999, min_data=0, max_data=1):

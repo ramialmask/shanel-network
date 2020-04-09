@@ -10,6 +10,7 @@ from components.deep_vessel_3d import Deep_Vessel_Net_FC
 from components.unet_3d_oliver import Unet3D
 from components.classification_cnn_2d import ClassificationCNN_2D, ClassificationCNN_2D_FCN
 from components.weighted_binary_cross_entropy_loss import WeightedBinaryCrossEntropyLoss
+from components.binary_cross_entropy_loss import BinaryCrossEntropyLoss
 from components.dice_loss import DiceLoss
 from components.training_dataset import TrainingDataset
 from components.training_dataset_discriminator_2d import TrainingDatasetDiscriminator_2D
@@ -77,12 +78,12 @@ def get_loss(settings):
     elif loss == "CrossEntropyLoss":
         criterion = nn.CrossEntropyLoss()
     elif loss == "BCELoss":
-        criterion = nn.BCELoss()
+        criterion = BinaryCrossEntropyLoss()
     elif loss == "WBCELoss":
         cf = False
-        if settings["training"]["loss"]["weight"] == "CF":
-            cf = True
-        print("Using Class Frequency: {}".format(str(cf)))
+        # if settings["training"]["loss"]["weight"] == "CF":
+        #     cf = True
+        # print("Using Class Frequency: {}".format(str(cf)))
         criterion = WeightedBinaryCrossEntropyLoss(class_frequency=cf, reduction=loss_reduction)
     elif loss == "WBCELossLogits":
         criterion = nn.BCEWithLogitsLoss(reduction=loss_reduction, pos_weight=torch.tensor([0.99,0.01]))
@@ -127,7 +128,7 @@ def load_network(settings, prediction=False):
 def get_normalization(settings):
     """Return the normalization function used for image preprocessing
     """
-    norm_function = normalization.normalize_std
+    norm_function = normalization.normalize
     return norm_function
 
 def get_loader(settings, input_list):

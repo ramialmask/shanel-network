@@ -119,16 +119,17 @@ def train_epoch(settings, loader, net, optimizer, criterion):
     # Train loss is saved in order to supervise training progress
     loss_list = []
     for item in loader:
+        print(item)
         item_input  = item["volume"].cuda()
-        item_label  = torch.FloatTensor([item["class"]]).cuda()
+        item_label  = torch.FloatTensor(item["class"]).cuda()
 
         optimizer.zero_grad()
-        logits = net(item_input)
-        logits = logits.view(-1)
+        probabilities = net(item_input)
+        probabilities = probabilities.view(-1)
 
         # print(f"Logits {logits} Label {item_label}")
 
-        training_loss = criterion(logits, item_label)
+        training_loss = criterion(probabilities, item_label)
         training_loss.backward()
 
         optimizer.step()
@@ -146,19 +147,21 @@ def validate_epoch(settings, loader, net, optimizer, criterion):
     loss_list = []
     for item_no, item in enumerate(loader):
         item_input  = item["volume"].cuda()
-        item_label  = torch.FloatTensor([item["class"]]).cuda()
+        item_label  = item["class"].cuda()
 
-        logits = net(item_input)
-        val_loss = criterion(logits, item_label)
-        propabilities = logits.detach().cpu().numpy()
+        probabilities = net(item_input)
+        probabilities = probabilities.view(-1)
+        # fs = f"Probability {probabilities} Label {item_label}"
+        val_loss = criterion(probabilities, item_label)
+        # if val_loss > 1:
+            # print(f"Validation Loss {val_loss}" + fs)
+        propabilities = probabilities.detach().cpu().numpy()
         
         # Stick to proper naming...
         predictions = propabilities
         predictions[predictions >= threshold] = 1
         predictions[predictions < threshold] = 0
 
-        if item_no == 2:
-            print(f"Item 2 pred {logits} label " + str(item["class"]))
         result_list.append([predictions, item["class"].numpy()])
         loss_list.append(val_loss.detach().cpu().numpy())
 

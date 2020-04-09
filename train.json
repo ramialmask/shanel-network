@@ -1,9 +1,9 @@
 {
     "retraining":"False",
-    "epochs":"25",
+    "epochs":"50",
     "delete_qs":"True",
     "loss":{
-        "class":"BCELoss",
+        "class":"WBCELoss",
         "reduction":"sum"
     },
     "crossvalidation":{
@@ -12,7 +12,7 @@
     },
     "optimizer":{
         "class":"Adam",
-        "learning_rate":"1e-5",
+        "learning_rate":"1e-4",
         "decay":"Default",
         "momentum":"Default"
     },

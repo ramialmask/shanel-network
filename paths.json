@@ -1,5 +1,5 @@
 {
-    "input_path":   "/media/ramial-maskari/16TBDrive/Synthetic Neuron Creation/classification/input/patches/",
+    "input_path":   "/home/ramial-maskari/Documents/Neuron Segmentation Project/segmentation/input/patches/",
     "input_model_path": "/media/ramial-maskari/16TBDrive/Synthetic Neuron Creation/classification/input/models/",
     "output_model_path":"/media/ramial-maskari/16TBDrive/Synthetic Neuron Creation/classification/output/models/",
     "writer_path":"/home/ramial-maskari/runs/",
@@ -7,7 +7,7 @@
     "input_postfix":"",
     "input_type":".nii.gz",
     "input_model":"",
-    "output_folder_prefix":"Classification CNN Test", 
+    "output_folder_prefix":"Classification CNN Test Only Segmented Patches ", 
     "output_prefix":"",
     "output_postfix":"",
     "output_type":".nii.gz",
