@@ -145,14 +145,8 @@ def calc_metrices(pred, target):
         - accuracy  (double)        : Accuracy score
         - f1_dice   (double)        : Dice/F1-Score
     """
-    pred = np.asarray(pred)
-    if pred[-1].shape != pred[0].shape:
-        pred = pred[:-1]
-    pred = pred.astype(bool)
-    target = np.asarray(target)
-    if target[-1].shape != target[0].shape:
-        target = target[:-1]
-    target = target.astype(bool)
+    pred = np.concatenate(pred).ravel().astype(bool)
+    target = np.concatenate(target).ravel().astype(bool)
     if pred.sum() == 0 and target.sum() == 0:
         precision = 1
         recall = 1
