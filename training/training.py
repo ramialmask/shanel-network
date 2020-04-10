@@ -47,13 +47,14 @@ def testfold_training(settings):
         train_val_lists = split_list(test_list[0], train_val_split_rate)
         # Validation scores as well as the corresponding networks are saved in this list
         val_candidates = []
+        print(f"Test List {len(test_list[1])} | {test_list[1]}")
         for train_val_iteration, train_val_list in enumerate(train_val_lists):
             # Create the loaders for training and validation for a network and...
-            print(f"Train List {train_val_list[0]}")
-            print(f"Val List {train_val_list[1]}")
+            print(f"Train List {len(train_val_list[0])} | {train_val_list[0]}")
+            print(f"Val List {len(train_val_list[1])} | {train_val_list[1]}")
             if settings["network"]  == "classification2d":
                 train_loader = get_discriminator_loader(settings, train_val_list[0])
-                val_loader = get_discriminator_loader(settings, train_val_list[1])
+                val_loader = get_discriminator_loader(settings, train_val_list[1], True)
             else:
                 train_loader = get_loader(settings, train_val_list[0])
                 val_loader = get_loader(settings, train_val_list[1])
@@ -70,7 +71,7 @@ def testfold_training(settings):
         print(f"Loss of best candidate: {best_candidate[2]}")
 
         # Test on the best candidate and save the settings
-        test_loader = get_discriminator_loader(settings, test_list[1])
+        test_loader = get_discriminator_loader(settings, test_list[1], True)
         test_score = test(settings, test_iteration, test_loader, best_candidate[0])
         print(f"Test scores {test_score}")
         test_scores.append(test_score)
@@ -119,7 +120,6 @@ def train_epoch(settings, loader, net, optimizer, criterion):
     # Train loss is saved in order to supervise training progress
     loss_list = []
     for item in loader:
-        print(item)
         item_input  = item["volume"].cuda()
         item_label  = torch.FloatTensor(item["class"]).cuda()
 
@@ -151,11 +151,10 @@ def validate_epoch(settings, loader, net, optimizer, criterion):
 
         probabilities = net(item_input)
         probabilities = probabilities.view(-1)
-        # fs = f"Probability {probabilities} Label {item_label}"
-        val_loss = criterion(probabilities, item_label)
-        # if val_loss > 1:
-            # print(f"Validation Loss {val_loss}" + fs)
         propabilities = probabilities.detach().cpu().numpy()
+
+        # Get validation loss
+        val_loss = criterion(probabilities, item_label)
         
         # Stick to proper naming...
         predictions = propabilities
@@ -165,7 +164,9 @@ def validate_epoch(settings, loader, net, optimizer, criterion):
         result_list.append([predictions, item["class"].numpy()])
         loss_list.append(val_loss.detach().cpu().numpy())
 
-    metric_list = calc_metrices([r[0] for r in result_list], [r[1] for r in result_list])
+    a = [r[0] for r in result_list]
+    b = [r[1] for r in result_list]
+    metric_list = calc_metrices(a, b)
 
     return metric_list, np.average(loss_list)# [np.average(m) for m in metric_list]
     
@@ -173,24 +174,29 @@ def test(settings, test_iteration, loader, net):
     """Tests an epoch and calculates precision, recall, accuracy, volumetric similarity and f1-score
     """
     net.eval()
-    result_list = []
     # Load the binarization threshold
     threshold = float(settings["prediction"]["threshold"])
+    # Test metrics are saved in order to supervise training progress
+    result_list = []
     for item in loader:
         item_input  = item["volume"].cuda()
-        item_label  = torch.FloatTensor([item["class"]]).cuda()
+        item_label  = item["class"].cuda()
 
-        logits = net(item_input)
-        propabilities = logits.detach().cpu().numpy()
+        propabilities = net(item_input)
+        propabilities = propabilities.view(-1)
+        propabilities = propabilities.detach().cpu().numpy()
         
         # Stick to proper naming...
         predictions = propabilities
         predictions[predictions >= threshold] = 1
         predictions[predictions < threshold] = 0
+
         result_list.append([predictions, item["class"].numpy()])
 
-    metric_list = calc_metrices([r[0] for r in result_list], [r[1] for r in result_list])
-
+    # metric_list = calc_metrices([r[0] for r in result_list], [r[1] for r in result_list])
+    a = [r[0] for r in result_list]
+    b = [r[1] for r in result_list]
+    metric_list = calc_metrices(a, b)
     #TODO Quick and dirty fix
     return metric_list# [np.average(m) for m in metric_list]
 
