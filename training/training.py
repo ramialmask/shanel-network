@@ -54,7 +54,7 @@ def testfold_training(settings):
             print(f"Val List {len(train_val_list[1])} | {train_val_list[1]}")
             if settings["network"]  == "classification2d":
                 train_loader = get_discriminator_loader(settings, train_val_list[0])
-                val_loader = get_discriminator_loader(settings, train_val_list[1], True)
+                val_loader = get_discriminator_loader(settings, train_val_list[1])
             else:
                 train_loader = get_loader(settings, train_val_list[0])
                 val_loader = get_loader(settings, train_val_list[1])
@@ -71,7 +71,7 @@ def testfold_training(settings):
         print(f"Loss of best candidate: {best_candidate[2]}")
 
         # Test on the best candidate and save the settings
-        test_loader = get_discriminator_loader(settings, test_list[1], True)
+        test_loader = get_discriminator_loader(settings, test_list[1])
         test_score = test(settings, test_iteration, test_loader, best_candidate[0])
         print(f"Test scores {test_score}")
         test_scores.append(test_score)

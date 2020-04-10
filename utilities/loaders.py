@@ -150,7 +150,7 @@ def get_loader(settings, input_list):
     item_loader = DataLoader(item_dataset, **item_params)
     return item_loader
 
-def get_discriminator_loader(settings, input_list,drop_last=False):
+def get_discriminator_loader(settings, input_list):
     norm_function = get_normalization(settings)
     item_dataset = TrainingDatasetDiscriminator_2D(settings, input_list, norm=norm_function)#=0.999))
     item_len = len(item_dataset)
@@ -158,6 +158,7 @@ def get_discriminator_loader(settings, input_list,drop_last=False):
     if (item_len + 1) % int(settings["dataloader"]["batch_size"]) == 0 or item_batch_size > 5:
         item_batch_size = int(settings["dataloader"]["batch_size"])
 
+    drop_last = False
     if settings["dataloader"]["drop_last"] == "True":
         drop_last = True
 

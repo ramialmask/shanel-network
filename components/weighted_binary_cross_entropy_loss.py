@@ -9,7 +9,7 @@ def bce(input_tensor, target_tensor, weights=None, class_frequency=False, reduct
     if class_frequency:
         weights = calc_class_frequency(target_tensor)
 
-    input_tensor = torch.nn.functional.sigmoid(input_tensor)
+    input_tensor = torch.sigmoid(input_tensor)
 
     # print(f"Loss Input {input_tensor.shape}")
     # print(f"Loss Target {target_tensor.shape}")
