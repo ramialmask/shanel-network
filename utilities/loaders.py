@@ -9,11 +9,14 @@ from functools import partial
 from components.deep_vessel_3d import Deep_Vessel_Net_FC
 from components.unet_3d_oliver import Unet3D
 from components.classification_cnn_2d import ClassificationCNN_2D, ClassificationCNN_2D_FCN
+from components.lean_classification_cnn_2d import LeanClassificationCNN_2D
+from components.lean_classification_cnn_3d import LeanClassificationCNN_3D
 from components.weighted_binary_cross_entropy_loss import WeightedBinaryCrossEntropyLoss
 from components.binary_cross_entropy_loss import BinaryCrossEntropyLoss
 from components.dice_loss import DiceLoss
 from components.training_dataset import TrainingDataset
 from components.training_dataset_discriminator_2d import TrainingDatasetDiscriminator_2D
+from components.training_dataset_discriminator_3d import TrainingDatasetDiscriminator_3D
 from components.prediction_dataset import PredictionDataset
 
 def get_optimizer(settings, net):
@@ -106,6 +109,10 @@ def load_network(settings, prediction=False):
         net = ClassificationCNN_2D()
     elif settings["network"] == "classification2d_fcn":
         net = ClassificationCNN_2D_FCN()
+    elif settings["network"] == "leanclassification2d":
+        net = LeanClassificationCNN_2D()
+    elif settings["network"] == "leanclassification3d":
+        net = LeanClassificationCNN_3D()
 
     if prediction or settings["training"]["retraining"] == "True":
         model_path = settings["paths"]["input_model_path"] + settings["paths"]["input_model"]
@@ -152,7 +159,10 @@ def get_loader(settings, input_list):
 
 def get_discriminator_loader(settings, input_list):
     norm_function = get_normalization(settings)
-    item_dataset = TrainingDatasetDiscriminator_2D(settings, input_list, norm=norm_function)#=0.999))
+    if "3d" in settings["network"]:
+        item_dataset = TrainingDatasetDiscriminator_3D(settings, input_list, norm=norm_function)#=0.999))
+    else:
+        item_dataset = TrainingDatasetDiscriminator_2D(settings, input_list, norm=norm_function)#=0.999))
     item_len = len(item_dataset)
     item_batch_size = item_len + 1
     if (item_len + 1) % int(settings["dataloader"]["batch_size"]) == 0 or item_batch_size > 5:
