@@ -12,7 +12,7 @@
         "normalization":"True",
         "normalization_type":"global",
         "normalization_values":{
-            "foreground":["0.0","65000.0"],
+            "foreground":["0.0","14337.0"],
             "background":["0.0","0.0"],
             "cutoff":"0.5"
         },
@@ -24,7 +24,7 @@
     },
     "dataloader":{
         "num_channels":"1",
-        "batch_size":"4",
+        "batch_size":"1",
         "shuffle":"True",
         "num_workers":"0",
         "block_size":"100",
