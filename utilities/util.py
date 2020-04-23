@@ -161,6 +161,16 @@ def calc_metrices(pred, target):
         f1_dice = (2*tp) / (2*tp + fp +fn)
     return precision, recall, vs, accuracy, f1_dice
 
+def get_model_name(settings):
+    model_name = settings["paths"]["output_folder_prefix"] + " " + \
+            settings["network"] + " " + settings["training"]["optimizer"]["class"] + \
+            " factor " + settings["training"]["scheduler"]["factor"] + " " + \
+            settings["training"]["loss"]["class"] + " LR=" + settings["training"]["optimizer"]["learning_rate"] + \
+            " Blocksize " + settings["dataloader"]["block_size"] + \
+            " Epochs " + settings["training"]["epochs"] + " "+ " | " + str(datetime.datetime.now())
+
+    return model_name
+
 def progress_bar(pars,toto,prefixmsg="", postfixmsg=""):
     percent = 100 * (pars / toto)# + 1
     bars = int(np.floor(percent)) * "█"

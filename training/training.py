@@ -5,7 +5,7 @@ from torch.utils.tensorboard import SummaryWriter
 import torch.nn.functional as F
 from random import shuffle
 from utilities.loaders import load_network, get_loader
-from utilities.util import calc_metrices, split_list, write_meta_dict
+from utilities.util import calc_metrices, split_list, write_meta_dict, get_model_name
 import datetime
 import shutil
 
@@ -32,14 +32,8 @@ def testfold_training(settings):
 
     # Concatenate the model name
     epochs = int(settings["training"]["epochs"])
-    model_name =  settings["paths"]["output_folder_prefix"] + \
-            settings["network"] + " " + settings["training"]["optimizer"]["class"] + \
-            " factor " + settings["training"]["scheduler"]["factor"] + " " + \
-            settings["training"]["loss"]["class"] + " LR=" + settings["training"]["optimizer"]["learning_rate"] + \
-            " Blocksize " + settings["dataloader"]["block_size"] + \
-            " Epochs " + settings["training"]["epochs"] + " "+ " | " + str(datetime.datetime.now())
+    model_name =  get_model_name(settings)    
 
-    
     # Set up the test/train/val splits
     input_list = os.listdir(settings["paths"]["input_raw_path"])
     test_split_rate = float(settings["training"]["crossvalidation"]["test_split_rate"])
