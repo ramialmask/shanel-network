@@ -31,7 +31,7 @@
         "drop_last":"False",
         "div_size":"-1"
     },
-    "network":"leanclassification3d",
+    "network":"leanclassification2d",
     "prediction":{
         "threshold":0.5,
         "sigmoid":"True",

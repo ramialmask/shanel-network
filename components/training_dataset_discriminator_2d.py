@@ -30,7 +30,7 @@ class TrainingDatasetDiscriminator_2D(Dataset):
                 image_class = -1
                 if "raw" in item:
                     image_class = 0
-                elif "bg" in item:
+                elif "syn" in item:
                     image_class = 1
                 image_class = np.array(image_class).astype(np.float64)
 
