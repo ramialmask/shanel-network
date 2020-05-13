@@ -44,7 +44,7 @@ class TrainingDatasetDiscriminator_2D(Dataset):
                 image       = torch.tensor(image).float().unsqueeze(0)
                 image_class = torch.tensor(image_class).float()
 
-                image_list.append((image, image_class))
+                image_list.append((image, image_class, item, axis))
 
         self.item_list = image_list
 
@@ -52,7 +52,7 @@ class TrainingDatasetDiscriminator_2D(Dataset):
         return len(self.item_list)
 
     def __getitem__(self, idx):
-        return {"volume":self.item_list[idx][0], "class":self.item_list[idx][1]}
+        return {"volume":self.item_list[idx][0], "class":self.item_list[idx][1], "item":self.item_list[idx][2], "axis":self.item_list[idx][3]}
 
 
 

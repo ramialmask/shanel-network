@@ -17,8 +17,6 @@ def bce(input_tensor, target_tensor, reduction='sum'):
     loss_r = getattr(torch, reduction)(loss) * -1
     assert(not torch.isnan(loss_r))
     assert(not torch.isinf(loss_r))
-    if loss_r > 1:
-        print(f" LOSS GREATER THAN 1 : {input_tensor} {target_tensor} {loss_r}")
     return loss_r
 
 class BinaryCrossEntropyLoss(_WeightedLoss):

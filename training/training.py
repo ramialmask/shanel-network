@@ -7,7 +7,6 @@ from utilities.loaders import load_network, get_loader, get_discriminator_loader
 from utilities.util import calc_metrices, split_list, write_meta_dict, get_model_name
 import shutil
 
-#TODO Save train, test, validation patches in settings dict!
 def testfold_training(settings):
     """Splits the training data into test folds, train folds and validation folds
     according to the meta information in train.json and trains a multitude of networks.
@@ -52,20 +51,13 @@ def testfold_training(settings):
             # Create the loaders for training and validation for a network and...
             print(f"Train List {len(train_val_list[0])} | {sorted(train_val_list[0][:10])}")
             print(f"Val List {len(train_val_list[1])} | {sorted(train_val_list[1][:10])}")
-            #TODO Dirty, needs fix
-            # if settings["network"]  == "classification2d":
-            import datetime
-            start = datetime.datetime.now()
-            print(f"Getting loaders...")
             train_loader = get_discriminator_loader(settings, train_val_list[0])
-            train_time = datetime.datetime.now() - start
-            start = datetime.datetime.now()
             val_loader = get_discriminator_loader(settings, train_val_list[1])
-            val_time = datetime.datetime.now() - start
-            print(f"Train Loader {train_time} Val Loader {val_time}")
-            # else:
-                # train_loader = get_loader(settings, train_val_list[0])
-                # val_loader = get_loader(settings, train_val_list[1])
+            
+            settings["training"]["crossvalidation"]["training_set"] = train_val_list[0]
+            settings["training"]["crossvalidation"]["validaton_set"] = train_val_list[1]
+            settings["training"]["crossvalidation"]["test_set"] = test_list[1]
+
 
             # ...train the network
             net, val_metrics, val_loss = train(settings, test_iteration, train_val_iteration, epochs, train_loader, val_loader, model_name)
@@ -100,7 +92,6 @@ def train(settings, test_fold, val_fold,  epochs, train_loader, val_loader, mode
     # Load all components beside the data loaders and create a dedicated writer for this model
     net, criterion, optimizer, scheduler = load_network(settings)
 
-    #TODO make this dir explicit in train.json
     writer_path = settings["paths"]["writer_path"]
     writer = SummaryWriter(f"{writer_path}{model_name}/{test_fold}/{val_fold}")
 
@@ -128,114 +119,46 @@ def train_epoch(settings, loader, net, optimizer, criterion):
 
     # Train loss is saved in order to supervise training progress
     loss_list = []
-    # import datetime
 
     for item in loader:
         # Load Volume
-        # start = datetime.datetime.now()
-        # torch.cuda.synchronize()
         item_input  = item["volume"]
-        # input_load_time = datetime.datetime.now() - start
-        # print(f"\t Input load \t\t{input_load_time}")
 
         # Load Volume to GPU
-        # start = datetime.datetime.now()
-        # torch.cuda.synchronize()
         item_input  = item_input.cuda()
-        # input_cuda_time = datetime.datetime.now() - start
-        # print(f"\t Input cuda \t\t{input_cuda_time}")
 
         # Load Label (to GPU) 
-        # start = datetime.datetime.now()
-        # torch.cuda.synchronize()
         item_label  = torch.FloatTensor(item["class"]).cuda()
-        # label_cuda_time = datetime.datetime.now() - start
-        # print(f"\t Label cuda \t\t{label_cuda_time}")
         
         # # Zero gradients
-        # start = datetime.datetime.now()
-        # torch.cuda.synchronize()
         optimizer.zero_grad()
-        # optimizer_zero_time = datetime.datetime.now() - start
-        # print(f"\t Optimizer Zero Grad \t{optimizer_zero_time}")
         
         # # Forward pass
-        # start = datetime.datetime.now()
-        # torch.cuda.synchronize()
         probabilities = net(item_input)
-        # net_time = datetime.datetime.now() - start
-        # print(f"\t Net forward \t\t{net_time}")
         
         # # Probability shaping
-        # start = datetime.datetime.now()
-        # torch.cuda.synchronize()
         probabilities = probabilities.view(-1)
-        # prob_time = datetime.datetime.now() - start
-        # print(f"\t Prob view \t\t{prob_time}")
         
         # # Loss calculation
-        # start = datetime.datetime.now()
-        # torch.cuda.synchronize()
         training_loss = criterion(probabilities, item_label)
-        # train_loss_time  = datetime.datetime.now() -start
-        # print(f"\t Train Loss Calc \t{train_loss_time}")
 
         # # Loss backward
-        # start = datetime.datetime.now()
-        # torch.cuda.synchronize()
         training_loss.backward()
-        # train_loss_back_time = datetime.datetime.now() - start
-        # print(f"\t Train Loss Back \t{train_loss_back_time}")
         
         # # Optimizer step
-        # start = datetime.datetime.now()
-        # torch.cuda.synchronize()
         optimizer.step()
-        # optimizer_step_time = datetime.datetime.now() - start
-        # print(f"\t Optimizer Step \t{optimizer_step_time}")
         
         # # Loss detach
-        # start = datetime.datetime.now()
-        # torch.cuda.synchronize()
-        training_loss = training_loss.detach()#training_loss.data # #float(f"{training_loss}".replace("tensor(","").replace(")",""))
-        # detach_time = datetime.datetime.now() - start
-        # print(f"\t Detach \t\t{detach_time}")
+        training_loss = training_loss.detach()
         
         # # Loss to CPU
-        # start = datetime.datetime.now()
-        # torch.cuda.synchronize()
         training_loss = training_loss.cpu()
-        # cpu_time = datetime.datetime.now() - start
-        # print(f"\t CPU \t\t\t{cpu_time}")
         
         # # Loss to Numpy
-        # start = datetime.datetime.now()
-        # torch.cuda.synchronize()
         training_loss = training_loss.numpy()
-        # np_time = datetime.datetime.now() - start
-        # print(f"\t NP \t\t\t{np_time}")
 
         # # Append loss to Loss-list
-        # start = datetime.datetime.now()
-        # torch.cuda.synchronize()
         loss_list.append(training_loss)
-        # append_time  = datetime.datetime.now() - start
-        # print(f"\t Append \t\t{append_time}")
-        # print(f"Network time:\n \
-        #         \t Input load \t\t{input_load_time}\n \
-        #         \t Input cuda \t\t{input_cuda_time}\n \
-        #         \t Label cuda \t\t{label_cuda_time}\n \
-        #         \t Optimizer Zero Grad \t{optimizer_zero_time}\n \
-        #         \t Net forward \t\t{net_time}\n \
-        #         \t Prob view \t\t{prob_time}\n \
-        #         \t Train Loss Calc \t{train_loss_time}\n \
-        #         \t Train Loss Back \t{train_loss_back_time}\n \
-        #         \t Optimizer Step \t{optimizer_step_time}\n \
-        #         \t Detach \t\t{detach_time}\n \
-        #         \t CPU \t\t\t{cpu_time}\n \
-        #         \t NP \t\t\t{np_time}\n \
-        #         \t Append \t\t{append_time}", end="\r",flush=True)
-        # print("_"*40 + "\n")
     return np.average(loss_list)
 
 def validate_epoch(settings, loader, net, optimizer, criterion):

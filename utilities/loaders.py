@@ -11,6 +11,7 @@ from components.unet_3d_oliver import Unet3D
 from components.classification_cnn_2d import ClassificationCNN_2D, ClassificationCNN_2D_FCN
 from components.lean_classification_cnn_2d import LeanClassificationCNN_2D
 from components.lean_classification_cnn_3d import LeanClassificationCNN_3D
+from components.simple_cnn_2d import Simple_CNN_2D
 from components.weighted_binary_cross_entropy_loss import WeightedBinaryCrossEntropyLoss
 from components.binary_cross_entropy_loss import BinaryCrossEntropyLoss
 from components.dice_loss import DiceLoss
@@ -113,6 +114,8 @@ def load_network(settings, prediction=False):
         net = LeanClassificationCNN_2D()
     elif settings["network"] == "leanclassification3d":
         net = LeanClassificationCNN_3D()
+    elif settings["network"] == "simplecnn2d":
+        net = Simple_CNN_2D()
 
     if prediction or settings["training"]["retraining"] == "True":
         model_path = settings["paths"]["input_model_path"] + settings["paths"]["input_model"]

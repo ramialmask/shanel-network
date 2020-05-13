@@ -9,10 +9,6 @@ def bce(input_tensor, target_tensor, weights=None, class_frequency=False, reduct
     if class_frequency:
         weights = calc_class_frequency(target_tensor)
 
-    input_tensor = torch.sigmoid(input_tensor)
-
-    # print(f"Loss Input {input_tensor.shape}")
-    # print(f"Loss Target {target_tensor.shape}")
     # If weights are given or class frequency is activated calculate with weights
     # Add 0.00001 to take into account that a normed matrix will contain 0 and 1
     loss_add = 0.0001
@@ -24,21 +20,6 @@ def bce(input_tensor, target_tensor, weights=None, class_frequency=False, reduct
                 + (1 - target_tensor) * torch.log(1 - input_tensor + loss_add)
 
     loss_r = getattr(torch, reduction)(loss) * -1
-    # if loss_r < 0:
-    #     print("Type loss {} input {} target {} weights[0] {}".format(loss.type(), input_tensor.type(), target_tensor.type(), weights[0].dtype))
-    #     lc = loss.clone().detach().cpu()
-    #     ip = input_tensor.clone().detach().cpu()
-    #     tt = target_tensor.clone().detach().cpu()
-    #     ww = torch.tensor(weights)
-    #     import datetime
-    #     dt = datetime.datetime.now()
-    #     path = "./segmentation/output/info/errors/" + str(dt)
-    #     torch.save(lc,path + "loss.pt")
-    #     torch.save(ip,path + "input.pt")
-    #     torch.save(tt,path + "target.pt")
-    #     torch.save(ww, path + "weights.pt")
-    #     print("Saved loss of {} (input = [{},{}]; target = [{},{}]) to {}".format(loss_r, torch.min(ip), torch.max(ip), torch.min(tt), torch.max(tt), path))
-
     assert(not torch.isnan(loss_r))
     assert(not torch.isinf(loss_r))
     return loss_r

@@ -69,5 +69,5 @@ class LeanClassificationCNN_2D(torch.nn.Module):
         Inputs:
         - path: path string
         """
-        print('Saving model... %s' % path)
+        # print('Saving model... %s' % path)
         torch.save(self, path)

@@ -1,5 +1,5 @@
 import sys
-sys.path.append("/home/rami/Documents/shanel-network/utilities")
+sys.path.append("/home/ramial-maskari/Documents/Pytorch Network/utilities/")
 import os
 import numpy as np
 from util import read_nifti, write_nifti, progress_bar
@@ -42,8 +42,9 @@ def refine_gt(path_in, path_out):
         patch_refined = multi_cc3d(patch)
 
         patch_path_out = os.path.join(path_out, item)
-        write_nifti(patch_refined, path_out)
+        print(f"Writing to {patch_path_out}")
+        write_nifti(patch_path_out,patch_refined)
 
-path_in = "/home/rami/Documents/shanel-segmentation/gt final/"
-path_out = "/home/rami/Documents/shanel-segmentation/gt refined/"
+path_in = "/home/ramial-maskari/Documents/Doris Segmentation/input/gt/"
+path_out = "/home/ramial-maskari/Documents/Doris Segmentation/input/gt refined/"
 refine_gt(path_in, path_out)
