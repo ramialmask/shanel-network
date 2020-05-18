@@ -1,7 +1,7 @@
 {
     "retraining":"False",
-    "epochs":"7",
-    "delete_qs":"True",
+    "epochs":"50",
+    "delete_qs":"False",
     "loss":{
         "class":"WBCELoss",
         "reduction":"sum"

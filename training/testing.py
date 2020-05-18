@@ -5,6 +5,7 @@ import sys
 sys.path.append("/home/ramial-maskari/Documents/Pytorch Network")
 from utilities.loaders import load_network, get_loader, get_discriminator_loader
 from utilities.util import calc_metrices,read_meta_dict
+from create_figure import create_summary
 import shutil
 import pandas as pd
 
@@ -100,7 +101,7 @@ def test(settings, loader, net, df):
 
 
 output_folder = "/media/ramial-maskari/16TBDrive/Synthetic Neuron Creation/classification/input/false classified 20 05 05 subsample/"
-model_name = "Simple CNN 7 Epochs simplecnn2d Adam factor 0.1 WBCELoss LR=1e-6 Blocksize 100 Epochs 7  | 2020-05-13 16:16:53.377838"
+model_name = "2D Classification test sample 20-05-05 subset safe leanclassification2d Adam factor 0.1 WBCELoss LR=1e-4 Blocksize 100 Epochs 50  | 2020-05-11 19:10:19.058385"
 if not os.path.exists(output_folder):
     os.mkdir(output_folder)
 import shutil
@@ -115,9 +116,14 @@ for model in best_models:
     settings_path = f"/media/ramial-maskari/16TBDrive/Synthetic Neuron Creation/classification/output/models/{model_name}/{test_fold}/{var_fold}/"
     settings = read_meta_dict(settings_path, "train")
     input_folder = settings["paths"]["input_path"]
-    model_path = settings_path + f"_{test_fold}_{var_fold}_6.dat"
+    model_path = settings_path + f"_{test_fold}_{var_fold}_49.dat"
     mcl, df = testfold_training(settings, model_path, df)
-df.to_csv("/media/ramial-maskari/16TBDrive/Synthetic Neuron Creation/classification/output/df 7 Epochs.csv")
+df.to_csv(f"/media/ramial-maskari/16TBDrive/Synthetic Neuron Creation/classification/output/models/{model_name}/test.csv")
+
+path = f"/media/ramial-maskari/16TBDrive/Synthetic Neuron Creation/classification/output/models/{model_name}/"
+image_input_path = settings["paths"]["input_path"]
+
+create_summary(df, path, image_input_path)
     
     # for misclassified_patch in mcl:
     #     patch_name = misclassified_patch[0][0]

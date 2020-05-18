@@ -97,7 +97,7 @@ def get_loss(settings):
         criterion = "MSELoss"
     return criterion
 
-def load_network(settings, prediction=False):
+def load_network(settings, prediction=False, model_path=""):
     """Load a network object and loss function and optimizer 
     Args:
         - settings (dict)   : The global settings dict
@@ -119,8 +119,11 @@ def load_network(settings, prediction=False):
 
     if prediction or settings["training"]["retraining"] == "True":
         model_path = settings["paths"]["input_model_path"] + settings["paths"]["input_model"]
-        t_ = torch.load(model_path)
-        net.load_state_dict(t_)
+
+    if len(model_path) > 1:
+        print(f"BEST MODEL PATH {model_path}")
+        net = torch.load(model_path)
+    
     if settings["computation"]["use_cuda"] == "True":
         net = net.cuda()
 

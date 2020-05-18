@@ -1,5 +1,5 @@
 import argparse
-import training.training as training
+import training.training_model_selection as training
 import prediction.prediction as prediction
 import counting.counting as counting
 import json

@@ -7,7 +7,7 @@
     "input_postfix":"",
     "input_type":".nii.gz",
     "input_model":"",
-    "output_folder_prefix":"Simple CNN 7 Epochs", 
+    "output_folder_prefix":"Improved Model Selection Simple CNN", 
     "output_prefix":"",
     "output_postfix":"",
     "output_type":".nii.gz",
