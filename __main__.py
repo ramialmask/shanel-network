@@ -1,5 +1,5 @@
 import argparse
-import training.training as training
+import training.training_classification as training_classification
 import prediction.prediction as prediction
 import counting.counting as counting
 import json
@@ -24,7 +24,8 @@ if __name__ == "__main__":
 
     if mode == "train":
         print("Check out TensorBoard to track the training progress:  https://localhost:6006")
-        training.crossvalidation(settings)
+        if settings["network"]["task"] == "classification":
+            training_classification.crossvalidation(settings)
     elif mode == "predict":
         prediction.prediction(settings)
     elif mode == "count":

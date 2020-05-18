@@ -1,4 +1,6 @@
 {
+    "network":"simplecnn2d",
+    "task":"classification",
     "computation":{
         "use_cuda":"True",
         "use_optimal_gpu":"True",
@@ -31,7 +33,6 @@
         "drop_last":"False",
         "div_size":"-1"
     },
-    "network":"simplecnn2d",
     "prediction":{
         "threshold":0.5,
         "sigmoid":"True",
