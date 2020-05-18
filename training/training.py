@@ -4,10 +4,12 @@ import numpy as np
 from torch.utils.tensorboard import SummaryWriter
 from random import shuffle
 from utilities.loaders import load_network, get_loader, get_discriminator_loader
-from utilities.util import calc_metrices, split_list, write_meta_dict, get_model_name
+from utilities.util import calc_metrices, split_list, read_meta_dict, write_meta_dict, get_model_name
+from utilities.create_figure import create_summary
 import shutil
+import pandas as pd
 
-def testfold_training(settings):
+def crossvalidation(settings):
     """Splits the training data into test folds, train folds and validation folds
     according to the meta information in train.json and trains a multitude of networks.
     The progress is written to a tensorboard. Models with the best validation score of 
@@ -27,6 +29,9 @@ def testfold_training(settings):
     print(f"Momentum:\t" + settings["training"]["optimizer"]["momentum"])
     print(f"Optimizer:\t" + settings["training"]["optimizer"]["class"])
 
+    early_stopping = settings["training"]["early_stopping"] == "True"
+    if early_stopping:
+        assert(settings["training"]["delete_qs"] == "False")
 
     # Concatenate the model name
     epochs = int(settings["training"]["epochs"])
@@ -39,13 +44,12 @@ def testfold_training(settings):
     test_lists = split_list(input_list, test_split_rate)
 
     # Final test scores are saved through all folds, initialize outside of loop
-    test_scores = []
+    df = pd.DataFrame(columns=["Test Fold","Validation Fold", "Epoch", "Train Loss", "Validation Loss", "Validation Accuracy", "Validation Precision", "Validation Recall", "Validation Dice"])
 
     for test_iteration, test_list in enumerate(test_lists):
         # For each test itearation, the train/validation splits are fixed
         train_val_lists = split_list(test_list[0], train_val_split_rate)
         # Validation scores as well as the corresponding networks are saved in this list
-        val_candidates = []
         print(f"Test List {len(test_list[1])} | {sorted(test_list[1][:10])}")
         for train_val_iteration, train_val_list in enumerate(train_val_lists):
             # Create the loaders for training and validation for a network and...
@@ -58,34 +62,124 @@ def testfold_training(settings):
             settings["training"]["crossvalidation"]["validaton_set"] = train_val_list[1]
             settings["training"]["crossvalidation"]["test_set"] = test_list[1]
 
-
             # ...train the network
-            net, val_metrics, val_loss = train(settings, test_iteration, train_val_iteration, epochs, train_loader, val_loader, model_name)
-            
-            # The network, metrics and loss are saved, allowing for other testing criterias other than loss (eg dice)
-            val_candidates.append((net, val_metrics, val_loss))
+            net, val_metrics, val_loss, df = train(settings, test_iteration, train_val_iteration, epochs, train_loader, val_loader, model_name, df)
 
-        # Get the best candidate for a test iteration by lambda sort
-        sorted_val_candidates = sorted(val_candidates, key=lambda tu: tu[2])
-        best_candidate = sorted_val_candidates[0]
-        print(f"Loss of best candidate: {best_candidate[2]}")
+    if early_stopping:
+        test_df = early_stopping(settings, df, model_name)
+    else:
+        test_df = test_crossvalidation(settings, df, model_name)
+
+    model_path = settings["paths"]["output_model_path"] + model_name
+    df.to_csv(f"{model_path}/training.csv")
+    test_df.to_csv(f"{model_path}/test.csv")
+    create_summary(test_df, model_path, settings["paths"]["input_path"])
+
+def test_crossvalidation(settings, df, model_name):
+    """Calculate the best epoch for each test fold and compute the score of the best model
+    Test scores are saved in test.csv
+    """
+    test_columns=["Test Fold", "Validation Fold", "Test Accuracy", "Test Precision", "Test Recall", "Test Dice"]
+    test_df = pd.DataFrame(columns=test_columns)
+
+    test_folds = range(0, int(1 / float(settings["training"]["crossvalidation"]["test_split_rate"])))
+    val_folds  = range(0, int(1 / float(settings["training"]["crossvalidation"]["train_val_split_rate"])))
+
+    epoch = int(settings["training"]["epochs"]) - 1
+
+    model_path = settings["paths"]["output_model_path"] + model_name
+
+    min_val_loss = 90001
+    best_fold = -1
+
+    for test_fold in test_folds:
+        # For each of the models get best validation loss
+        for val_fold in val_folds:
+            df_fold = df.loc[(df["Test Fold"] == test_fold) & (df["Validation Fold"] == val_fold) & (df["Epoch"] == epoch)]
+            if df_fold["Validation Loss"][0] < min_val_loss:
+                min_val_loss = df_fold["Validation Loss"][0]
+                best_fold = df_fold
+
+        best_val_fold = best_fold["Validation Fold"]
+        best_model_path = os.path.join(model_path, str(test_fold), str(val_fold))
+        best_model_data_path = best_model_path + f"/_{test_fold}_{val_fold}_{epoch}.dat"
+        
+        # Once we have the best model path, we need to update the settings to get the correct test folds
+        settings = read_meta_dict(best_model_path, "train")
+        best_model, _, _, _ = load_network(settings, model_path = best_model_data_path)
 
         # Test on the best candidate and save the settings
-        test_loader = get_discriminator_loader(settings, test_list[1])
-        test_score = test(settings, test_iteration, test_loader, best_candidate[0])
+        test_list = settings["training"]["crossvalidation"]["test_set"]
+        test_loader = get_discriminator_loader(settings, test_list)
+        test_score = test(settings, test_fold, test_loader, best_model)
         print(f"Test scores {test_score}")
-        test_scores.append(test_score)
+        test_item = pd.DataFrame({"Test Fold":[test_fold],\
+                            "Validation Fold":[best_val_fold],\
+                            "Test Accuracy":[test_score[0]],\
+                            "Test Precision":[test_score[1]],\
+                            "Test Recall":[test_score[-2]],\
+                            "Test Dice":[test_score[-1]],\
+                            })
+        test_df.append(test_item)
+    return test_df
 
-    # Print the test scores
-    result_str = "Test fold;Accuracy;Precision;Recall;Dice;\n"
-    for i in range(len(test_scores)):
-        result_str += f"{i};{test_scores[i][-2]:.4F};{test_scores[i][0]:.4F};{test_scores[i][1]:.4F};{test_scores[i][-1]:.4F};\n"
-    print(result_str)
+def early_stopping(settings, df, model_name):
+    """Calculate the best epoch for each test fold and compute the score of the best model
+    Test scores are saved in test.csv
+    """
+    test_columns=["Test Fold", "Validation Fold", "Epoch", "Test Accuracy", "Test Precision", "Test Recall", "Test Dice"]
+    test_df = pd.DataFrame(columns=test_columns)
 
-    with open(settings["paths"]["output_model_path"] + "/" +  model_name + f"/test_scores.txt", "x") as file:
-        file.write(result_str)
+    test_folds = range(0, int(1 / float(settings["training"]["crossvalidation"]["test_split_rate"])))
+    val_folds  = range(0, int(1 / float(settings["training"]["crossvalidation"]["train_val_split_rate"])))
 
-def train(settings, test_fold, val_fold,  epochs, train_loader, val_loader, model_name):
+
+    model_path = settings["paths"]["output_model_path"] + model_name
+
+    for test_fold in test_folds:
+        # Find the epoch with the overall lowest val score in one val fold
+        best_epochs = []
+        for val_fold in val_folds:
+            df_fold = df.loc[(df["Test Fold"] == test_fold) & (df["Validation Fold"] == val_fold)]
+            min_val = df_fold["Validation Loss"].min()
+            best_epoch = df_fold.loc[(df_fold["Validation Loss"] == min_val)]["Epoch"]
+            best_epochs.append(best_epoch)
+        val_epoch = int(np.mean(best_epochs))
+        min_val_loss = 9000
+        best_fold = -1
+        # For each of the models get best validation loss
+        for val_fold in val_folds:
+            df_fold = df.loc[(df["Test Fold"] == test_fold) & (df["Validation Fold"] == val_fold) & (df["Epoch"] == val_epoch)]
+            if df_fold["Validation Loss"][0] < min_val_loss:
+                min_val_loss = df_fold["Validation Loss"][0]
+                best_fold = df_fold
+
+        best_val_fold = best_fold["Validation Fold"]
+        best_epoch = best_fold["Epoch"][0]
+        best_model_path = os.path.join(model_path, str(test_fold), str(val_fold))
+        best_model_data_path = best_model_path + f"/_{test_fold}_{val_fold}_{best_epoch}.dat"
+        
+        # Once we have the best model path, we need to update the settings to get the correct test folds
+        settings = read_meta_dict(best_model_path, "train")
+        best_model, _, _, _ = load_network(settings, model_path = best_model_data_path)
+
+        # Test on the best candidate and save the settings
+        test_list = settings["training"]["crossvalidation"]["test_set"]
+        test_loader = get_discriminator_loader(settings, test_list)
+        test_score = test(settings, test_fold, test_loader, best_model)
+        print(f"Test scores {test_score}")
+        test_item = pd.DataFrame({"Test Fold":[test_fold],\
+                            "Validation Fold":[best_val_fold],\
+                            "Epoch":[best_epoch],\
+                            "Test Accuracy":[test_score[0]],\
+                            "Test Precision":[test_score[1]],\
+                            "Test Recall":[test_score[-2]],\
+                            "Test Dice":[test_score[-1]],\
+                            })
+        test_df.append(test_item)
+    return test_df
+
+def train(settings, test_fold, val_fold,  epochs, train_loader, val_loader, model_name, df):
     """Trains and validates one epoch, writes the output to both screen and attached writer and saves the epoch 
     (eg to recover training progress in case of a crash)
     """
@@ -105,11 +199,11 @@ def train(settings, test_fold, val_fold,  epochs, train_loader, val_loader, mode
         scheduler.step(eval_loss)
         
         # Write down the progress
-        _write_progress(writer, test_fold, val_fold, epoch, epochs,train_loss, eval_loss, metrics)
+        df = _write_progress(writer, test_fold, val_fold, epoch, epochs,train_loss, eval_loss, metrics, df)
 
         # Save the epoch and optionally delete the last network
         last_model_path = save_epoch(settings, net, epoch, model_name, test_fold, val_fold, last_model_path)
-    return net, metrics, eval_loss
+    return net, metrics, eval_loss, df
 
 def train_epoch(settings, loader, net, optimizer, criterion):
     """Trains one epoch
@@ -193,8 +287,8 @@ def validate_epoch(settings, loader, net, optimizer, criterion):
     b = [r[1] for r in result_list]
     metric_list = calc_metrices(a, b)
 
-    return metric_list, np.average(loss_list)# [np.average(m) for m in metric_list]
-    
+    return metric_list, np.average(loss_list)
+
 def test(settings, test_iteration, loader, net):
     """Tests an epoch and calculates precision, recall, accuracy, volumetric similarity and f1-score
     """
@@ -218,12 +312,10 @@ def test(settings, test_iteration, loader, net):
 
         result_list.append([predictions, item["class"].numpy()])
 
-    # metric_list = calc_metrices([r[0] for r in result_list], [r[1] for r in result_list])
     a = [r[0] for r in result_list]
     b = [r[1] for r in result_list]
     metric_list = calc_metrices(a, b)
-    #TODO Quick and dirty fix
-    return metric_list# [np.average(m) for m in metric_list]
+    return metric_list
 
 def save_epoch(settings, net, epoch, model_name, test_fold, val_fold, last_model_path):
     """Saves an epoch into a new path and deletes the model from the previous epoch
@@ -252,13 +344,31 @@ def save_epoch(settings, net, epoch, model_name, test_fold, val_fold, last_model
     write_meta_dict(model_save_dir, settings, "train")
     return model_save_dir
 
-def _write_progress(writer, test_fold, val_fold, epoch, epochs, train_loss, eval_loss, metrics):
+def _write_progress(writer, test_fold, val_fold, epoch, epochs, train_loss, eval_loss, metrics, df):
     """Writes the progress of the training both on the default output as well as the connected tensorboard writer
     """
+
+    # Print the test progress to std.out
     print(f"{test_fold} {val_fold} Epoch {epoch} of {epochs}\tTrain Loss:\t{train_loss}\tValidation Loss:\t{eval_loss}\tValidation Dice:\t{metrics[-1]}")
+    
+    # Construct Dataframe for train.csv
+    df_item = pd.DataFrame({"Test Fold":[test_fold],\
+                            "Validation Fold":[val_fold],\
+                            "Epoch":[epoch],\
+                            "Train Loss": [train_loss],\
+                            "Validation Loss":[eval_loss],\
+                            "Validation Accuracy":[metrics[0]],\
+                            "Validation Precision":[metrics[1]],\
+                            "Validation Recall":[metrics[-2]],\
+                            "Validation Dice":[metrics[-1]],\
+                            })
+    df = df.append(df_item)
+    
+    # Write the progress to the tensorboard
     writer.add_scalar(f"Loss/Training", train_loss, epoch)
     writer.add_scalar(f"Loss/Validation", eval_loss, epoch)
     writer.add_scalar(f"Validation Metrics/Precision", metrics[0], epoch)
     writer.add_scalar(f"Validation Metrics/Recall", metrics[1], epoch)
     writer.add_scalar(f"Validation Metrics/Accuracy", metrics[-2], epoch)
     writer.add_scalar(f"Validation Metrics/Dice", metrics[-1], epoch)
+    return df

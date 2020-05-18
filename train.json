@@ -1,14 +1,15 @@
 {
     "retraining":"False",
-    "epochs":"50",
-    "delete_qs":"False",
+    "epochs":"2",
+    "early_stopping":"False",
+    "delete_qs":"True",
     "loss":{
         "class":"WBCELoss",
         "reduction":"sum"
     },
     "crossvalidation":{
-        "test_split_rate":"0.2",
-        "train_val_split_rate":"0.2"
+        "test_split_rate":"0.5",
+        "train_val_split_rate":"0.5"
     },
     "optimizer":{
         "class":"Adam",

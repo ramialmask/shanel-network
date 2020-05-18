@@ -3,10 +3,9 @@ import sys
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-from matplotlib.patches import Rectangle
 import matplotlib.gridspec as gridspec
+from matplotlib.patches import Rectangle
 from PIL import Image
-sys.path.append("/home/ramial-maskari/Documents/Pytorch Network")
 from utilities.util import read_meta_dict
 
 def load_image(name, axis,image_input_path):
@@ -24,6 +23,7 @@ def create_subplot(fig_axis, p_list, index,image_input_path):
 
 def create_histogram(df, path,image_input_path):
     """ Create a figure with 4 Subplots """
+    print("Creating histogram")
     fig, ax = plt.subplots()
     ax.set_title("Histogram of p-values")
 
@@ -44,6 +44,7 @@ def create_histogram(df, path,image_input_path):
     plt.savefig(f"{path}histogram.png", dpi=400)
 
 def create_high_confident_tp(df, path,image_input_path):
+    print("Creating high confident true classified summary")
     fig = plt.figure(constrained_layout=True)
     fig.suptitle("Highly confident correct classified")
     spec = gridspec.GridSpec(ncols=3, nrows=2, figure=fig)
@@ -75,6 +76,7 @@ def create_high_confident_tp(df, path,image_input_path):
     plt.savefig(f"{path}certain tc.png",dpi=400)
 
 def create_high_confident_fp(df, path,image_input_path):
+    print("Creating high confident false classified summary")
     fig = plt.figure(constrained_layout=True)
     fig.suptitle("Highly confident incorrect classified")
     spec = gridspec.GridSpec(ncols=3, nrows=2, figure=fig)
@@ -106,6 +108,7 @@ def create_high_confident_fp(df, path,image_input_path):
     plt.savefig(f"{path}certain fc.png",dpi=400)
 
 def create_uncertain(df, path,image_input_path):
+    print("Creating uncertain patches summary")
     fig = plt.figure(constrained_layout=True)
     fig.suptitle("Uncertain patches")
     spec = gridspec.GridSpec(ncols=3, nrows=2, figure=fig)
@@ -142,6 +145,7 @@ def create_summary(df, path, image_input_path):
     - An overview of incorrectly classified patches with extreme p-values
     - An overview of patches with p-values suggesting network uncertainty
     """
+    print("Creating visual summary")
     create_histogram(df, path, image_input_path)
     create_high_confident_tp(df, path, image_input_path)
     create_high_confident_fp(df, path, image_input_path)
