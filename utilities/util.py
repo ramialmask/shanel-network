@@ -244,6 +244,7 @@ def read_meta_dict(path, mode):
             settings["preprocessing"] = _temp["preprocessing"]
             settings["dataloader"] = _temp["dataloader"]
             settings["network"] =  _temp["network"]
+            settings["task"] = _temp["task"]
             settings["prediction"] = _temp["prediction"]
             settings["postprocessing"] =  _temp["postprocessing"]
 
@@ -274,6 +275,7 @@ def write_meta_dict(path, settings, mode="train"):
             _temp["preprocessing"]  = settings["preprocessing"]
             _temp["dataloader"]     = settings["dataloader"]
             _temp["network"]        = settings["network"]
+            _temp["task"]           = settings["task"]
             _temp["prediction"]     = settings["prediction"]
             _temp["postprocessing"] = settings["postprocessing"]
             json.dump(_temp, file)

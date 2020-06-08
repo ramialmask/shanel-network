@@ -66,14 +66,15 @@ def crossvalidation(settings):
             net, val_metrics, val_loss, df = train(settings, test_iteration, train_val_iteration, epochs, train_loader, val_loader, model_name, df)
 
     if early_stopping:
-        test_df = early_stopping(settings, df, model_name)
+        test_df, test_patch_df = early_stopping(settings, df, model_name)
     else:
-        test_df = test_crossvalidation(settings, df, model_name)
+        test_df, test_patch_df = test_crossvalidation(settings, df, model_name)
 
     model_path = settings["paths"]["output_model_path"] + model_name
     df.to_csv(f"{model_path}/training.csv")
-    test_df.to_csv(f"{model_path}/test.csv")
-    create_summary(test_df, model_path, settings["paths"]["input_path"])
+    test_df.to_csv(f"{model_path}/test_scores.csv")
+    test_patch_df.to_csv(f"{model_path}/test.csv")
+    create_summary(test_patch_df, model_path + "/", settings["paths"]["input_path"])
 
 def test_crossvalidation(settings, df, model_name):
     """Calculate the best epoch for each test fold and compute the score of the best model
@@ -82,8 +83,8 @@ def test_crossvalidation(settings, df, model_name):
     test_columns=["Test Fold", "Validation Fold", "Test Accuracy", "Test Precision", "Test Recall", "Test Dice"]
     test_df = pd.DataFrame(columns=test_columns)
 
-    test_folds = range(0, int(1 / float(settings["training"]["crossvalidation"]["test_split_rate"])))
-    val_folds  = range(0, int(1 / float(settings["training"]["crossvalidation"]["train_val_split_rate"])))
+    test_folds = range(0, int(1 / float(settings["training"]["crossvalidation"]["test_split_rate"])) - 1)
+    val_folds  = range(0, int(1 / float(settings["training"]["crossvalidation"]["train_val_split_rate"])) - 1)
 
     epoch = int(settings["training"]["epochs"]) - 1
 
@@ -91,6 +92,8 @@ def test_crossvalidation(settings, df, model_name):
 
     min_val_loss = 90001
     best_fold = -1
+
+    test_patch_df = pd.DataFrame(columns=['patch','axis','class','predicted class','propability'])
 
     for test_fold in test_folds:
         # For each of the models get best validation loss
@@ -100,7 +103,7 @@ def test_crossvalidation(settings, df, model_name):
                 min_val_loss = df_fold["Validation Loss"][0]
                 best_fold = df_fold
 
-        best_val_fold = best_fold["Validation Fold"]
+        best_val_fold = best_fold["Validation Fold"][0]
         best_model_path = os.path.join(model_path, str(test_fold), str(val_fold))
         best_model_data_path = best_model_path + f"/_{test_fold}_{val_fold}_{epoch}.dat"
         
@@ -111,7 +114,7 @@ def test_crossvalidation(settings, df, model_name):
         # Test on the best candidate and save the settings
         test_list = settings["training"]["crossvalidation"]["test_set"]
         test_loader = get_discriminator_loader(settings, test_list)
-        test_score = test(settings, test_fold, test_loader, best_model)
+        test_score, test_patch_df = test(settings, test_fold, test_loader, best_model, test_patch_df)
         print(f"Test scores {test_score}")
         test_item = pd.DataFrame({"Test Fold":[test_fold],\
                             "Validation Fold":[best_val_fold],\
@@ -120,8 +123,8 @@ def test_crossvalidation(settings, df, model_name):
                             "Test Recall":[test_score[-2]],\
                             "Test Dice":[test_score[-1]],\
                             })
-        test_df.append(test_item)
-    return test_df
+        test_df = test_df.append(test_item)
+    return test_df, test_patch_df
 
 def early_stopping(settings, df, model_name):
     """Calculate the best epoch for each test fold and compute the score of the best model
@@ -130,11 +133,13 @@ def early_stopping(settings, df, model_name):
     test_columns=["Test Fold", "Validation Fold", "Epoch", "Test Accuracy", "Test Precision", "Test Recall", "Test Dice"]
     test_df = pd.DataFrame(columns=test_columns)
 
-    test_folds = range(0, int(1 / float(settings["training"]["crossvalidation"]["test_split_rate"])))
-    val_folds  = range(0, int(1 / float(settings["training"]["crossvalidation"]["train_val_split_rate"])))
+    test_folds = range(0, int(1 / float(settings["training"]["crossvalidation"]["test_split_rate"])) - 1)
+    val_folds  = range(0, int(1 / float(settings["training"]["crossvalidation"]["train_val_split_rate"])) - 1)
 
 
     model_path = settings["paths"]["output_model_path"] + model_name
+
+    test_patch_df = pd.DataFrame(columns=['patch','axis','class','predicted class','propability'])
 
     for test_fold in test_folds:
         # Find the epoch with the overall lowest val score in one val fold
@@ -154,7 +159,7 @@ def early_stopping(settings, df, model_name):
                 min_val_loss = df_fold["Validation Loss"][0]
                 best_fold = df_fold
 
-        best_val_fold = best_fold["Validation Fold"]
+        best_val_fold = best_fold["Validation Fold"][0]
         best_epoch = best_fold["Epoch"][0]
         best_model_path = os.path.join(model_path, str(test_fold), str(val_fold))
         best_model_data_path = best_model_path + f"/_{test_fold}_{val_fold}_{best_epoch}.dat"
@@ -166,7 +171,7 @@ def early_stopping(settings, df, model_name):
         # Test on the best candidate and save the settings
         test_list = settings["training"]["crossvalidation"]["test_set"]
         test_loader = get_discriminator_loader(settings, test_list)
-        test_score = test(settings, test_fold, test_loader, best_model)
+        test_score, test_patch_df = test(settings, test_fold, test_loader, best_model, test_patch_df)
         print(f"Test scores {test_score}")
         test_item = pd.DataFrame({"Test Fold":[test_fold],\
                             "Validation Fold":[best_val_fold],\
@@ -176,8 +181,8 @@ def early_stopping(settings, df, model_name):
                             "Test Recall":[test_score[-2]],\
                             "Test Dice":[test_score[-1]],\
                             })
-        test_df.append(test_item)
-    return test_df
+        test_df = test_df.append(test_item)
+    return test_df, test_patch_df
 
 def train(settings, test_fold, val_fold,  epochs, train_loader, val_loader, model_name, df):
     """Trains and validates one epoch, writes the output to both screen and attached writer and saves the epoch 
@@ -209,8 +214,6 @@ def train_epoch(settings, loader, net, optimizer, criterion):
     """Trains one epoch
     """
     net.train()
-    # torch.cuda.synchronize()
-
     # Train loss is saved in order to supervise training progress
     loss_list = []
 
@@ -289,7 +292,7 @@ def validate_epoch(settings, loader, net, optimizer, criterion):
 
     return metric_list, np.average(loss_list)
 
-def test(settings, test_iteration, loader, net):
+def test(settings, test_iteration, loader, net, df):
     """Tests an epoch and calculates precision, recall, accuracy, volumetric similarity and f1-score
     """
     net.eval()
@@ -304,7 +307,8 @@ def test(settings, test_iteration, loader, net):
         propabilities = net(item_input)
         propabilities = propabilities.view(-1)
         propabilities = propabilities.detach().cpu().numpy()
-        
+        propabilities_float = float(propabilities[0])
+
         # Stick to proper naming...
         predictions = propabilities
         predictions[predictions >= threshold] = 1
@@ -312,10 +316,21 @@ def test(settings, test_iteration, loader, net):
 
         result_list.append([predictions, item["class"].numpy()])
 
+        item_item = item["item"]
+        item_axis = item["axis"].numpy()
+
+        df_item = pd.DataFrame({"patch":[item_item[0]],\
+                                "axis":[int(item_axis[0])],\
+                                "class":[float(item_label[0])],\
+                                "predicted class":[float(predictions[0])],\
+                                "propability":[propabilities_float]})
+
+        df = df.append(df_item)
+
     a = [r[0] for r in result_list]
     b = [r[1] for r in result_list]
     metric_list = calc_metrices(a, b)
-    return metric_list
+    return metric_list, df
 
 def save_epoch(settings, net, epoch, model_name, test_fold, val_fold, last_model_path):
     """Saves an epoch into a new path and deletes the model from the previous epoch

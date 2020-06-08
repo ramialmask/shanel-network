@@ -186,6 +186,8 @@ def get_discriminator_loader(settings, input_list):
             batch_size=item_batch_size,
             drop_last=drop_last)
     }
+    print(f"Data Loader parameters:\n{item_params}")
+    print(f"Drop Last {drop_last}")
     item_loader = DataLoader(item_dataset, **item_params)
     return item_loader
 

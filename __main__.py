@@ -24,7 +24,7 @@ if __name__ == "__main__":
 
     if mode == "train":
         print("Check out TensorBoard to track the training progress:  https://localhost:6006")
-        if settings["network"]["task"] == "classification":
+        if settings["task"] == "classification":
             training_classification.crossvalidation(settings)
     elif mode == "predict":
         prediction.prediction(settings)
