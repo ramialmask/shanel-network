@@ -199,8 +199,8 @@ def train(settings, test_fold, val_fold,  epochs, train_loader, val_loader, mode
 
     for epoch in range(epochs):
         # Train one epoch and validate it
-        train_loss = train_epoch(settings, train_loader, net, optimizer, criterion)
-        metrics, eval_loss = validate_epoch(settings, val_loader, net, optimizer, criterion)
+        train_loss          =    train_epoch(settings, train_loader, net, optimizer, criterion)
+        metrics, eval_loss  = validate_epoch(settings, val_loader  , net, optimizer, criterion)
         scheduler.step(eval_loss)
         
         # Write down the progress
@@ -267,16 +267,16 @@ def validate_epoch(settings, loader, net, optimizer, criterion):
     # Validation loss and metrics are saved in order to supervise training progress
     result_list = []
     loss_list = []
-    for item_no, item in enumerate(loader):
+    for item in loader:
         item_input  = item["volume"].cuda()
         item_label  = item["class"].cuda()
 
         probabilities = net(item_input)
         probabilities = probabilities.view(-1)
-        propabilities = probabilities.detach().cpu().numpy()
 
         # Get validation loss
         val_loss = criterion(probabilities, item_label)
+        propabilities = probabilities.detach().cpu().numpy()
         
         # Stick to proper naming...
         predictions = propabilities
