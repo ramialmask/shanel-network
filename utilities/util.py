@@ -178,6 +178,13 @@ def progress_bar(pars,toto,prefixmsg="", postfixmsg=""):
     print(prefixmsg + "\t | Overall: %d%% \t" % percent + bars + postfixmsg, end="\r", flush=True)
 
 def split_list(input_list, split_rate):
+    """Splits a list into n = 1 / split_rate pairs of two disjunct sublists
+    Args:
+        input_list (list):   List containing all elements
+        split_rate (float):   Percentage of elements contained in the small list
+    Returns:
+        A list containing n tuples of lists
+    """
     split_size = int(np.ceil(len(input_list) * split_rate))
     split_amount = int(len(input_list) / split_size)
     shuffle(input_list)

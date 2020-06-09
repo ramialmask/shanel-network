@@ -218,44 +218,27 @@ def train_epoch(settings, loader, net, optimizer, criterion):
     loss_list = []
 
     for item in loader:
-        # Load Volume
-        item_input  = item["volume"]
-
-        # Load Volume to GPU
-        item_input  = item_input.cuda()
-
-        # Load Label (to GPU) 
-        item_label  = torch.FloatTensor(item["class"]).cuda()
-        
-        # # Zero gradients
+        # Zero gradients
         optimizer.zero_grad()
         
-        # # Forward pass
-        probabilities = net(item_input)
+        # Load Volume and labels to GPU
+        item_input  = item["volume"].cuda()
+        item_label  = torch.FloatTensor(item["class"]).cuda()
         
-        # # Probability shaping
+        # Forward pass
+        probabilities = net(item_input)
         probabilities = probabilities.view(-1)
         
-        # # Loss calculation
+        # Loss calculation
         training_loss = criterion(probabilities, item_label)
 
-        # # Loss backward
-        training_loss.backward()
-        
-        # # Optimizer step
-        optimizer.step()
-        
-        # # Loss detach
-        training_loss = training_loss.detach()
-        
-        # # Loss to CPU
-        training_loss = training_loss.cpu()
-        
-        # # Loss to Numpy
-        training_loss = training_loss.numpy()
+        # Append loss to Loss-list
+        loss_list.append(training_loss.item())
 
-        # # Append loss to Loss-list
-        loss_list.append(training_loss)
+        # Backward pass
+        training_loss.backward()
+        optimizer.step()
+
     return np.average(loss_list)
 
 def validate_epoch(settings, loader, net, optimizer, criterion):
@@ -267,24 +250,27 @@ def validate_epoch(settings, loader, net, optimizer, criterion):
     # Validation loss and metrics are saved in order to supervise training progress
     result_list = []
     loss_list = []
+
     for item in loader:
+        # Load Volume and labels to GPU
         item_input  = item["volume"].cuda()
         item_label  = item["class"].cuda()
 
+        # Forward pass
         probabilities = net(item_input)
         probabilities = probabilities.view(-1)
 
-        # Get validation loss
+        # Loss calculation
         val_loss = criterion(probabilities, item_label)
-        propabilities = probabilities.detach().cpu().numpy()
+        loss_list.append(val_loss.item())
         
         # Stick to proper naming...
+        propabilities = probabilities.detach().cpu().numpy()
         predictions = propabilities
         predictions[predictions >= threshold] = 1
         predictions[predictions < threshold] = 0
 
         result_list.append([predictions, item["class"].numpy()])
-        loss_list.append(val_loss.detach().cpu().numpy())
 
     a = [r[0] for r in result_list]
     b = [r[1] for r in result_list]
